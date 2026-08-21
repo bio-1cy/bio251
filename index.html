@@ -241,6 +241,16 @@
     .content-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;margin:20px auto;max-width:600px;text-align:right;border:1px solid rgba(255,143,200,.12);box-shadow:0 0 20px rgba(255,143,200,.04);}
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
 </style>
+
+<style id="biovibe-admin-css">
+#bvAdminBtn{position:fixed;bottom:22px;left:22px;z-index:9998;display:none;border:0;border-radius:999px;padding:12px 18px;background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#071b1f;font-weight:800;cursor:pointer;box-shadow:0 8px 30px #0008}
+#bvAdminOverlay{position:fixed;inset:0;background:#02090be8;z-index:9999;display:none;overflow:auto;padding:30px;box-sizing:border-box}
+#bvAdminPanel{max-width:980px;margin:20px auto;background:#071b1f;border:1px solid #00eaff66;border-radius:24px;padding:24px;box-shadow:0 20px 80px #000a;color:#fff;font-family:Tahoma,Arial,sans-serif}
+#bvAdminPanel h2{margin-top:0;color:#74f2e7}#bvAdminPanel .bv-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+#bvAdminPanel input,#bvAdminPanel select,#bvAdminPanel textarea{box-sizing:border-box;width:100%;padding:12px;border-radius:12px;border:1px solid #00eaff55;background:#031316;color:#fff}
+#bvAdminPanel .bv-half{flex:1;min-width:220px}.bv-btn{border:0;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:700}.bv-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#061417}.bv-danger{background:#7d2335;color:#fff}.bv-muted{background:#16343a;color:#fff}
+.bv-item{border:1px solid #00eaff33;border-radius:15px;padding:14px;margin:10px 0;background:#06171a}.bv-item small{opacity:.7}.bv-flex{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.bv-status{margin:10px 0;padding:10px;border-radius:10px;background:#0d2a30;display:none}
+</style>
 </head>
 
 <body>
@@ -329,6 +339,21 @@
     <section id="company" class="page"><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    // =========================
+    // BioVibe + Supabase
+    // =========================
+    const SUPABASE_URL = "https://ltqdnzvxqtblsfwgpzbe.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_TFjbcMuC4NZpovBXa1-e_A_UacRY377";
+
+    const supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+</script>
+
 <script>
     let currentMode = 'login';
     function switchMode(mode) {
@@ -363,16 +388,113 @@
         }
     }
 
-    function handleAuth() {
-        const u = document.getElementById('user').value;
+    async function handleAuth() {
+        const u = document.getElementById('user').value.trim();
         const p = document.getElementById('pass').value;
-        if(currentMode === 'login') {
-            if(u && p) {
-                document.getElementById('loginPage').style.display="none";
-                document.getElementById('mainSite').style.display="block";
-            } else alert("نام کاربری و رمز را وارد کنید");
-        } else {
-            alert("درخواست شما ثبت شد.");
+        const email = document.getElementById('email').value.trim();
+        const btn = document.getElementById('mainBtn');
+
+        if (currentMode === 'login') {
+            if (!u || !p) {
+                alert("نام کاربری و رمز عبور را وارد کنید");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "در حال ورود...";
+
+            // Securely resolve username -> email through a Supabase RPC.
+            const { data: email, error: profileError } = await supabaseClient
+                .rpc("get_login_email", { p_username: u });
+
+            if (profileError || !email) {
+                btn.disabled = false;
+                btn.innerText = "ورود";
+                alert("نام کاربری یا رمز عبور اشتباه است.");
+                return;
+            }
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: p
+            });
+
+            btn.disabled = false;
+            btn.innerText = "ورود";
+
+            if (error) {
+                alert("نام کاربری یا رمز عبور اشتباه است.");
+                return;
+            }
+
+            document.getElementById('loginPage').style.display = "none";
+            document.getElementById('mainSite').style.display = "block";
+
+        } else if (currentMode === 'register') {
+            if (!u || !email || !p) {
+                alert("نام کاربری، ایمیل و رمز عبور را کامل وارد کنید");
+                return;
+            }
+
+            if (p.length < 6) {
+                alert("رمز عبور باید حداقل ۶ کاراکتر باشد");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "در حال ثبت‌نام...";
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: p,
+                options: {
+                    data: {
+                        username: u
+                    }
+                }
+            });
+
+            btn.disabled = false;
+            btn.innerText = "ثبت‌نام";
+
+            if (error) {
+                alert("ثبت‌نام ناموفق بود: " + error.message);
+                return;
+            }
+
+            if (data.session) {
+                alert("ثبت‌نام با موفقیت انجام شد.");
+                document.getElementById('loginPage').style.display = "none";
+                document.getElementById('mainSite').style.display = "block";
+            } else {
+                alert("ثبت‌نام انجام شد. اگر تأیید ایمیل فعال باشد، ایمیل تأیید برای شما ارسال می‌شود.");
+                switchMode('login');
+            }
+
+        } else if (currentMode === 'forgot') {
+            if (!email) {
+                alert("ایمیل خود را وارد کنید");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "در حال ارسال...";
+
+            const redirectUrl = window.location.href.split('#')[0];
+
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                redirectTo: redirectUrl
+            });
+
+            btn.disabled = false;
+            btn.innerText = "ارسال کد";
+
+            if (error) {
+                alert("ارسال ایمیل ناموفق بود: " + error.message);
+                return;
+            }
+
+            alert("اگر این ایمیل در سیستم ثبت شده باشد، لینک بازیابی رمز ارسال می‌شود.");
             switchMode('login');
         }
     }
@@ -402,7 +524,70 @@
             if(data.journal) data.journal.forEach(item => jCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
         } catch (e) { console.log("JSON Load Error"); }
     }
+    async function restoreSession() {
+        const { data } = await supabaseClient.auth.getSession();
+
+        if (data.session) {
+            document.getElementById('loginPage').style.display = "none";
+            document.getElementById('mainSite').style.display = "block";
+        } else {
+            document.getElementById('loginPage').style.display = "flex";
+            document.getElementById('mainSite').style.display = "none";
+        }
+    }
+
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_IN" && session) {
+            document.getElementById('loginPage').style.display = "none";
+            document.getElementById('mainSite').style.display = "block";
+        }
+        if (event === "SIGNED_OUT") {
+            document.getElementById('loginPage').style.display = "flex";
+            document.getElementById('mainSite').style.display = "none";
+        }
+    });
+
+    restoreSession();
     loadContent();
+</script>
+
+<button id="bvAdminBtn" onclick="BVAdmin.open()">⚙️ پنل مدیریت</button>
+<div id="bvAdminOverlay">
+  <div id="bvAdminPanel">
+    <div class="bv-flex"><h2>⚙️ پنل مدیریت BioVibe</h2><button class="bv-btn bv-muted" onclick="BVAdmin.close()">بستن</button></div>
+    <div id="bvAdminStatus" class="bv-status"></div>
+    <h3>👥 مدیریت ادمین‌ها</h3>
+    <p>ایمیل کاربری که قبلاً در سایت ثبت‌نام کرده را وارد کن تا ادمین شود.</p>
+    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="admin@example.com"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن ادمین</button></div>
+    <div id="bvAdminList"></div>
+    <hr style="border-color:#00eaff22;margin:24px 0">
+    <h3>📝 افزودن محتوا</h3>
+    <div class="bv-row"><div class="bv-half"><select id="bvSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Media</option><option>Bio-Lab</option><option>Bio-Company</option></select></div><div class="bv-half"><input id="bvTitle" placeholder="عنوان"></div></div>
+    <textarea id="bvDescription" rows="6" placeholder="متن محتوا"></textarea>
+    <div class="bv-row" style="margin-top:10px"><div class="bv-half"><input id="bvImageUrl" placeholder="لینک تصویر (فعلاً URL)"></div><div class="bv-half"><input id="bvLinkUrl" placeholder="لینک مطلب"></div></div>
+    <button class="bv-btn bv-primary" onclick="BVAdmin.addContent()">+ انتشار محتوا</button>
+    <div id="bvContentList" style="margin-top:18px"></div>
+  </div>
+</div>
+
+<script id="biovibe-admin-js">
+window.BVAdmin = (() => {
+  const $=id=>document.getElementById(id);
+  function status(msg,ok=true){const el=$('bvAdminStatus');el.style.display='block';el.textContent=msg;el.style.border=ok?'1px solid #00eaff55':'1px solid #ff668855';}
+  async function isAdmin(){ const {data,error}=await supabaseClient.rpc('is_current_user_admin'); return !error && data===true; }
+  async function refreshButton(){ if(await isAdmin()) $('bvAdminBtn').style.display='block'; else $('bvAdminBtn').style.display='none'; }
+  async function open(){ if(!(await isAdmin())){alert('دسترسی ادمین ندارید.');return;} $('bvAdminOverlay').style.display='block'; await Promise.all([loadAdmins(),loadContents()]); }
+  function close(){$('bvAdminOverlay').style.display='none'}
+  async function loadAdmins(){ const {data,error}=await supabaseClient.rpc('list_admins'); if(error){status(error.message,false);return;} $('bvAdminList').innerHTML=data.map(a=>`<div class="bv-item"><div class="bv-flex"><div><b>${escapeHtml(a.email)}</b><br><small>${a.id}</small></div><button class="bv-btn bv-danger" onclick="BVAdmin.removeAdmin('${a.email}')">حذف ادمین</button></div></div>`).join('') || '<p>ادمینی ثبت نشده است.</p>'; }
+  async function addAdmin(){ const email=$('bvAdminEmail').value.trim(); if(!email)return alert('ایمیل را وارد کن.'); const {data,error}=await supabaseClient.rpc('set_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('ادمین با موفقیت اضافه شد.'); $('bvAdminEmail').value=''; await loadAdmins(); }
+  async function removeAdmin(email){ if(!confirm('این کاربر از لیست ادمین‌ها حذف شود؟'))return; const {error}=await supabaseClient.rpc('remove_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('دسترسی ادمین حذف شد.'); await loadAdmins(); }
+  async function addContent(){ const payload={section:$('bvSection').value,title:$('bvTitle').value.trim(),description:$('bvDescription').value.trim(),image_url:$('bvImageUrl').value.trim()||null,link_url:$('bvLinkUrl').value.trim()||null}; if(!payload.title)return alert('عنوان را وارد کن.'); const {error}=await supabaseClient.from('contents').insert(payload); if(error){status(error.message,false);return;} status('محتوا منتشر شد.'); $('bvTitle').value='';$('bvDescription').value='';$('bvImageUrl').value='';$('bvLinkUrl').value=''; await loadContents(); }
+  async function loadContents(){ const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50); if(error){$('bvContentList').innerHTML='';return;} $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+data.map(x=>`<div class="bv-item"><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}</small><p>${escapeHtml(x.description||'')}</p></div>`).join(''); }
+  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+  supabaseClient.auth.onAuthStateChange(()=>setTimeout(refreshButton,100));
+  setTimeout(refreshButton,500);
+  return {open,close,addAdmin,removeAdmin,addContent};
+})();
 </script>
 </body>
 </html>
