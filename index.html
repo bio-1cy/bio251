@@ -242,7 +242,17 @@
     .content-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;margin:20px auto;max-width:600px;text-align:right;border:1px solid rgba(255,143,200,.12);box-shadow:0 0 20px rgba(255,143,200,.04);}
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
 </style>
-<style id="biovibe-media-css">.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin:22px 0}.media-card{background:rgba(7,27,31,.72);border:1px solid rgba(0,234,255,.18);border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.18)}.media-card img{display:block;width:100%;height:190px;object-fit:cover;background:#071b1f}.media-card-body{padding:12px}.media-card h3{font-size:15px;margin-bottom:5px}.media-card p{color:#c5dde0;font-size:12px;line-height:1.8}.media-empty{margin:24px 0;padding:18px;border:1px dashed rgba(0,234,255,.22);border-radius:16px;color:#c5dde0;text-align:center}.media-admin-box{margin-top:18px;padding:16px;border:1px solid rgba(0,234,255,.18);border-radius:16px;background:rgba(0,0,0,.14)}.media-file-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:10px}.media-file-list img{width:100%;height:90px;object-fit:cover;border-radius:10px;border:1px solid rgba(0,234,255,.18)}#adminBtn{position:fixed !important;right:18px !important;bottom:18px !important;z-index:10001 !important;margin:0 !important}@media(max-width:600px){.media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.media-card img{height:150px}}</style></head>
+
+<style id="biovibe-admin-css">
+#bvAdminBtn{position:fixed;bottom:22px;left:22px;z-index:9998;display:none;border:0;border-radius:999px;padding:12px 18px;background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#071b1f;font-weight:800;cursor:pointer;box-shadow:0 8px 30px #0008}
+#bvAdminOverlay{position:fixed;inset:0;background:#02090be8;z-index:9999;display:none;overflow:auto;padding:30px;box-sizing:border-box}
+#bvAdminPanel{max-width:980px;margin:20px auto;background:#071b1f;border:1px solid #00eaff66;border-radius:24px;padding:24px;box-shadow:0 20px 80px #000a;color:#fff;font-family:Tahoma,Arial,sans-serif}
+#bvAdminPanel h2{margin-top:0;color:#74f2e7}#bvAdminPanel .bv-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+#bvAdminPanel input,#bvAdminPanel select,#bvAdminPanel textarea{box-sizing:border-box;width:100%;padding:12px;border-radius:12px;border:1px solid #00eaff55;background:#031316;color:#fff}
+#bvAdminPanel .bv-half{flex:1;min-width:220px}.bv-btn{border:0;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:700}.bv-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#061417}.bv-danger{background:#7d2335;color:#fff}.bv-muted{background:#16343a;color:#fff}
+.bv-item{border:1px solid #00eaff33;border-radius:15px;padding:14px;margin:10px 0;background:#06171a}.bv-item small{opacity:.7}.bv-flex{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.bv-status{margin:10px 0;padding:10px;border-radius:10px;background:#0d2a30;display:none}
+</style>
+</head>
 
 <body>
 
@@ -272,14 +282,13 @@
 
         <div class="loginTitle" id="authTitle">BioVibe</div>
         
-        <label class="fieldLabel" id="userLabel" for="user">نام کاربری</label>
+        <label class="fieldLabel" for="user">نام کاربری</label>
         <input id="user" placeholder="نام کاربری" autocomplete="username">
 
         <label class="fieldLabel" for="pass">رمز عبور</label>
         <input id="pass" type="password" placeholder="رمز عبور" autocomplete="current-password">
 
-        <label class="fieldLabel" id="emailLabel" for="email" style="display:none;">ایمیل</label>
-        <input id="email" type="email" placeholder="ایمیل" style="display:none;" autocomplete="email">
+        <input id="email" placeholder="ایمیل" style="display:none;" autocomplete="email">
 
         <button id="mainBtn" onclick="handleAuth()">ورود</button>
 
@@ -293,7 +302,7 @@
 
 <div id="mainSite">
     <header>
-        <button class="menu-toggle" onclick="toggleMenu()">☰</button><button id="adminBtn" onclick="openAdminPanel()">👑 مدیریت</button>
+        <button class="menu-toggle" onclick="toggleMenu()">☰</button>
         <div class="logo-fa">بایو وایب</div>
         <button class="logout-btn" onclick="logout()">خروج</button>
     </header>
@@ -327,7 +336,7 @@
     </section>
 
     <section id="lab" class="page"><h2>Bio‑Lab</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="media" class="page"><h2>Bio‑Media</h2><div id="media-container" class="media-grid"></div><div id="media-empty" class="media-empty" style="display:none;">هنوز عکسی در Bio‑Media منتشر نشده است.</div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="media" class="page"><h2>Bio‑Media</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="company" class="page"><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
 </div>
 
@@ -353,16 +362,12 @@
         const authTitle = document.getElementById('authTitle');
         const mainBtn = document.getElementById('mainBtn');
         const emailField = document.getElementById('email');
-        const emailLabel = document.getElementById('emailLabel');
         const passField = document.getElementById('pass');
         const toggleLink = document.getElementById('toggleLink');
-        const userLabel = document.getElementById('userLabel');
 
         if(mode === 'register') {
             authTitle.innerText = "BioVibe";
             mainBtn.innerText = "ثبت‌نام";
-            userLabel.innerText = "نام کاربری";
-            emailLabel.style.display = "block";
             emailField.style.display = "block";
             passField.style.display = "block";
             toggleLink.innerHTML = "ورود به حساب";
@@ -370,8 +375,6 @@
         } else if(mode === 'login') {
             authTitle.innerText = "BioVibe";
             mainBtn.innerText = "ورود";
-            userLabel.innerText = "نام کاربری";
-            emailLabel.style.display = "none";
             emailField.style.display = "none";
             passField.style.display = "block";
             toggleLink.innerHTML = "ثبت‌نام می‌کنم";
@@ -379,8 +382,6 @@
         } else {
             authTitle.innerText = "BioVibe";
             mainBtn.innerText = "ارسال کد";
-            userLabel.innerText = "نام کاربری";
-            emailLabel.style.display = "block";
             emailField.style.display = "block";
             passField.style.display = "none";
             toggleLink.innerHTML = "برگشت به ورود";
@@ -403,21 +404,19 @@
             btn.disabled = true;
             btn.innerText = "در حال ورود...";
 
-            const { data: loginEmail, error: lookupError } = await supabaseClient.rpc('get_login_email', { p_username: u });
-            if (lookupError) {
+            // Securely resolve username -> email through a Supabase RPC.
+            const { data: email, error: profileError } = await supabaseClient
+                .rpc("get_login_email", { p_username: u });
+
+            if (profileError || !email) {
                 btn.disabled = false;
                 btn.innerText = "ورود";
-                alert("خطای اتصال ورود: " + lookupError.message + "\n\nابتدا فایل SQL اصلاحی را در Supabase اجرا کن.");
+                alert("نام کاربری یا رمز عبور اشتباه است.");
                 return;
             }
-            if (!loginEmail) {
-                btn.disabled = false;
-                btn.innerText = "ورود";
-                alert("این نام کاربری پیدا نشد.");
-                return;
-            }
+
             const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: loginEmail,
+                email: email,
                 password: p
             });
 
@@ -425,13 +424,12 @@
             btn.innerText = "ورود";
 
             if (error) {
-                alert("ورود ناموفق بود: " + error.message);
+                alert("نام کاربری یا رمز عبور اشتباه است.");
                 return;
             }
 
             document.getElementById('loginPage').style.display = "none";
             document.getElementById('mainSite').style.display = "block";
-            checkAdmin();
 
         } else if (currentMode === 'register') {
             if (!u || !email || !p) {
@@ -465,14 +463,13 @@
                 return;
             }
 
-            if (data.user) {
-                alert(data.session
-                    ? "ثبت‌نام با موفقیت انجام شد و وارد سایت شدید."
-                    : "ثبت‌نام با موفقیت انجام شد. اکنون با نام کاربری و رمز عبور وارد شوید."
-                );
-                if (!data.session) switchMode('login');
+            if (data.session) {
+                alert("ثبت‌نام با موفقیت انجام شد.");
+                document.getElementById('loginPage').style.display = "none";
+                document.getElementById('mainSite').style.display = "block";
             } else {
-                alert("ثبت‌نام انجام نشد. دوباره تلاش کنید.");
+                alert("ثبت‌نام انجام شد. اگر تأیید ایمیل فعال باشد، ایمیل تأیید برای شما ارسال می‌شود.");
+                switchMode('login');
             }
 
         } else if (currentMode === 'forgot') {
@@ -503,31 +500,13 @@
         }
     }
 
-    async function logout(){
-        try {
-            const {error}=await supabaseClient.auth.signOut({scope:'global'});
-            if(error) throw error;
-        } catch(e) {
-            console.error('Logout error:', e);
-        }
-        // قطع کامل ورود محلی تا بعد از رفرش دوباره خودکار وارد سایت نشود
-        try {
-            Object.keys(localStorage).filter(k=>k.startsWith('sb-') && k.endsWith('-auth-token')).forEach(k=>localStorage.removeItem(k));
-            Object.keys(sessionStorage).filter(k=>k.startsWith('sb-') && k.endsWith('-auth-token')).forEach(k=>sessionStorage.removeItem(k));
-        } catch(e) {}
-        document.getElementById('mainSite').style.display='none';
-        document.getElementById('loginPage').style.display='flex';
-        document.getElementById('user').value='';
-        document.getElementById('pass').value='';
-        switchMode('login');
-    }
+    function logout(){ location.reload(); }
     function toggleMenu(){ sideMenu.classList.toggle("active") }
 
     function openPage(id){
         document.getElementById("heroSection").style.display="none";
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
         document.getElementById(id).style.display="block";
-        if(id === "media") loadMedia();
         sideMenu.classList.remove("active");
     }
 
@@ -538,162 +517,117 @@
 
     async function loadContent(){
         try {
-            const {data,error}=await supabaseClient.rpc('list_site_content');
-            const nCont=document.getElementById("news-container");
-            const jCont=document.getElementById("journal-container");
-            nCont.innerHTML=""; jCont.innerHTML="";
-            if(!error && data){
-                data.forEach(item=>{
-                    const html=`<div class="content-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.body).replace(/\n/g,"<br>")}</p></div>`;
-                    if(item.section==="news") nCont.innerHTML += html;
-                    if(item.section==="journal") jCont.innerHTML += html;
-                });
-                return;
-            }
-            const res=await fetch("biovibe-data.json");
-            const json=await res.json();
-            if(json.news) json.news.forEach(item=>nCont.innerHTML += `<div class="content-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div>`);
-            if(json.journal) json.journal.forEach(item=>jCont.innerHTML += `<div class="content-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div>`);
-        } catch(e) { console.log("Content Load Error",e); }
+            const res = await fetch("biovibe-data.json");
+            const data = await res.json();
+            const nCont = document.getElementById("news-container");
+            const jCont = document.getElementById("journal-container");
+            if(data.news) data.news.forEach(item => nCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
+            if(data.journal) data.journal.forEach(item => jCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
+        } catch (e) { console.log("JSON Load Error"); }
     }
-    // صفحه ورود در هر بار باز شدن سایت نمایش داده می‌شود.
-    // Session قبلی باعث رد شدن خودکار از صفحه ورود نمی‌شود.
-    function showLoginPage(){
-        document.getElementById('loginPage').style.display = "flex";
-        document.getElementById('mainSite').style.display = "none";
-    }
-    function showMainSite(){
-        document.getElementById('loginPage').style.display = "none";
-        document.getElementById('mainSite').style.display = "block";
-        checkAdmin();
-    }
+    async function restoreSession() {
+        const { data } = await supabaseClient.auth.getSession();
 
-    showLoginPage();
+        if (data.session) {
+            document.getElementById('loginPage').style.display = "none";
+            document.getElementById('mainSite').style.display = "block";
+        } else {
+            document.getElementById('loginPage').style.display = "flex";
+            document.getElementById('mainSite').style.display = "none";
+        }
+    }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) showMainSite();
-        if (event === "SIGNED_OUT") showLoginPage();
+        if (event === "SIGNED_IN" && session) {
+            document.getElementById('loginPage').style.display = "none";
+            document.getElementById('mainSite').style.display = "block";
+        }
+        if (event === "SIGNED_OUT") {
+            document.getElementById('loginPage').style.display = "flex";
+            document.getElementById('mainSite').style.display = "none";
+        }
     });
+
+    restoreSession();
     loadContent();
 </script>
 
-<style>
-#adminBtn{display:none;background:linear-gradient(90deg,#74f2e7,#ff9ac8);border:none;padding:8px 14px;border-radius:20px;cursor:pointer;font-weight:900;color:#061317;margin-left:8px}
-#adminPanel{display:none;position:fixed;inset:0;background:rgba(0,8,10,.82);backdrop-filter:blur(10px);z-index:9999;padding:24px;overflow:auto}
-.adminBox{max-width:760px;margin:60px auto;background:#071b1f;border:1px solid rgba(0,234,255,.35);border-radius:20px;padding:22px;box-shadow:0 0 40px rgba(0,234,255,.12)}
-.adminBox h2{margin-bottom:16px}.adminRow{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.adminBox input,.adminBox textarea,.adminBox select{flex:1;min-width:180px;padding:10px;border-radius:10px;border:1px solid rgba(0,234,255,.3);background:#061417;color:white;font-family:inherit}.adminBox textarea{min-height:100px}.adminBox button{padding:9px 14px;border:0;border-radius:12px;cursor:pointer;font-family:inherit;font-weight:700}.adminPrimary{background:linear-gradient(90deg,#45e9de,#ff9ac9);color:#061317}.adminDanger{background:#ff6b8a;color:#25050d}.adminGhost{background:#123036;color:white}.adminItem{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 0}.adminSection{margin-top:25px;padding-top:18px;border-top:1px solid rgba(0,234,255,.16)}
-</style>
-<script>
-let bioVibeIsAdmin = false;
-
-async function checkAdmin(){
-  try{
-    const {data:{session}} = await supabaseClient.auth.getSession();
-    if(!session){ bioVibeIsAdmin=false; document.getElementById('adminBtn').style.display='none'; return; }
-    const {data,error}=await supabaseClient.rpc('is_current_user_admin');
-    bioVibeIsAdmin = !error && data === true;
-    document.getElementById('adminBtn').style.display=bioVibeIsAdmin?'inline-block':'none';
-  }catch(e){ bioVibeIsAdmin=false; }
-}
-
-function openAdminPanel(){
-  if(!bioVibeIsAdmin){alert('دسترسی ادمین ندارید.');return;}
-  document.getElementById('adminPanel').style.display='block';
-  loadAdmins();
-  loadAdminContent();
-  loadAdminMedia();
-}
-function closeAdminPanel(){document.getElementById('adminPanel').style.display='none';}
-
-async function loadAdmins(){
-  const box=document.getElementById('adminList'); box.innerHTML='در حال بارگذاری...';
-  const {data,error}=await supabaseClient.rpc('list_admins');
-  if(error){box.innerHTML='خطا: '+error.message;return;}
-  box.innerHTML='';
-  (data||[]).forEach(a=>{
-    const row=document.createElement('div'); row.className='adminItem';
-    row.innerHTML='<span>'+escapeHtml(a.email)+'</span><button class="adminDanger" onclick="removeAdmin(\''+String(a.email).replace(/'/g,"\\'")+'\')">حذف</button>';
-    box.appendChild(row);
-  });
-}
-async function addAdmin(){
-  const input=document.getElementById('newAdminEmail'); const email=input.value.trim();
-  if(!email){alert('ایمیل را وارد کنید.');return;}
-  const {data,error}=await supabaseClient.rpc('add_admin_by_email',{target_email:email});
-  if(error){alert('خطا: '+error.message);return;}
-  alert(data || 'ادمین اضافه شد.');
-  input.value=''; loadAdmins();
-}
-async function removeAdmin(email){
-  if(!confirm('ادمین '+email+' حذف شود؟')) return;
-  const {data,error}=await supabaseClient.rpc('remove_admin_by_email',{target_email:email});
-  if(error){alert('خطا: '+error.message);return;}
-  alert(data || 'ادمین حذف شد.'); loadAdmins();
-}
-
-async function loadAdminContent(){
-  const box=document.getElementById('contentList'); box.innerHTML='در حال بارگذاری...';
-  const {data,error}=await supabaseClient.rpc('list_site_content');
-  if(error){box.innerHTML='خطا: '+error.message;return;}
-  box.innerHTML='';
-  (data||[]).forEach(c=>{
-    const row=document.createElement('div'); row.className='adminItem';
-    row.innerHTML='<div><b>'+escapeHtml(c.section)+'</b> — '+escapeHtml(c.title)+'</div><button class="adminDanger" onclick="deleteContent('+c.id+')">حذف</button>';
-    box.appendChild(row);
-  });
-}
-async function saveContent(){
-  const section=document.getElementById('contentSection').value;
-  const title=document.getElementById('contentTitle').value.trim();
-  const body=document.getElementById('contentBody').value.trim();
-  if(!title||!body){alert('عنوان و متن را کامل کنید.');return;}
-  const {data,error}=await supabaseClient.rpc('upsert_site_content',{p_section:section,p_title:title,p_body:body});
-  if(error){alert('خطا: '+error.message);return;}
-  alert('محتوا ذخیره شد.'); document.getElementById('contentTitle').value=''; document.getElementById('contentBody').value=''; loadAdminContent(); loadContent();
-}
-async function deleteContent(id){
-  if(!confirm('این محتوا حذف شود؟'))return;
-  const {error}=await supabaseClient.rpc('delete_site_content',{p_id:id});
-  if(error){alert('خطا: '+error.message);return;}
-  loadAdminContent(); loadContent();
-}
-    function previewMediaFiles(event){const box=document.getElementById('mediaFilePreview');box.innerHTML='';const files=[...(event.target.files||[])];files.slice(0,30).forEach(file=>{if(!file.type.startsWith('image/'))return;const img=document.createElement('img');img.src=URL.createObjectURL(file);img.alt=file.name;box.appendChild(img);});}
-    async function uploadMediaFiles(){if(!bioVibeIsAdmin){alert('دسترسی ادمین ندارید.');return;}const input=document.getElementById('mediaFiles');const files=[...(input.files||[])].slice(0,30);if(!files.length){alert('حداقل یک عکس انتخاب کنید.');return;}const title=document.getElementById('mediaTitle').value.trim()||null;const description=document.getElementById('mediaDescription').value.trim()||null;const status=document.getElementById('mediaAdminStatus');status.textContent='در حال آپلود عکس‌ها...';let done=0;try{for(const file of files){if(!file.type.startsWith('image/'))throw new Error('فقط فایل تصویری مجاز است.');if(file.size>12*1024*1024)throw new Error(`حجم «${file.name}» بیشتر از ۱۲ مگابایت است.`);const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';const path=`gallery/${Date.now()}-${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await supabaseClient.storage.from('biovibe-media').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(uploadError)throw uploadError;const {data:urlData}=supabaseClient.storage.from('biovibe-media').getPublicUrl(path);const {data:userData}=await supabaseClient.auth.getUser();const {error:insertError}=await supabaseClient.from('site_media').insert({path,public_url:urlData.publicUrl,title,description,created_by:userData.user?.id||null});if(insertError){await supabaseClient.storage.from('biovibe-media').remove([path]);throw insertError;}done++;status.textContent=`${done} از ${files.length} عکس آپلود شد...`;}status.textContent=`${done} عکس با موفقیت ذخیره شد.`;input.value='';document.getElementById('mediaFilePreview').innerHTML='';document.getElementById('mediaTitle').value='';document.getElementById('mediaDescription').value='';await loadMedia();await loadAdminMedia();}catch(e){status.textContent='خطا: '+(e?.message||e);}}
-    async function loadMedia(){const box=document.getElementById('media-container'),empty=document.getElementById('media-empty');if(!box)return;box.innerHTML='<div style="color:#c5dde0">در حال بارگذاری...</div>';const {data,error}=await supabaseClient.from('site_media').select('id,title,description,public_url,created_at').order('created_at',{ascending:false});if(error){box.innerHTML='<div style="color:#ff9ac8">خطا در بارگذاری تصاویر.</div>';return;}if(!data?.length){box.innerHTML='';empty.style.display='block';return;}empty.style.display='none';box.innerHTML=data.map(item=>`<article class="media-card"><img src="${item.public_url}" alt="${escapeHtml(item.title||'BioVibe')}"><div class="media-card-body">${item.title?`<h3>${escapeHtml(item.title)}</h3>`:''}${item.description?`<p>${escapeHtml(item.description)}</p>`:''}</div></article>`).join('');}
-    async function loadAdminMedia(){const box=document.getElementById('mediaAdminList');if(!box||!bioVibeIsAdmin)return;const {data,error}=await supabaseClient.from('site_media').select('id,title,public_url,path').order('created_at',{ascending:false});if(error){box.innerHTML='<div style="color:#ff9ac8">خطا در دریافت فهرست عکس‌ها.</div>';return;}box.innerHTML=(data||[]).map(item=>`<div class="adminItem"><div style="display:flex;align-items:center;gap:10px"><img src="${item.public_url}" style="width:54px;height:42px;object-fit:cover;border-radius:8px"><span>${escapeHtml(item.title||'بدون عنوان')}</span></div><button class="adminDanger" onclick="deleteMedia(${item.id},'${encodeURIComponent(item.path)}')">حذف</button></div>`).join('')||'<div style="color:#c5dde0">عکسی ثبت نشده است.</div>';}
-    async function deleteMedia(id,encodedPath){if(!confirm('این عکس حذف شود؟'))return;const path=decodeURIComponent(encodedPath);const {error:storageError}=await supabaseClient.storage.from('biovibe-media').remove([path]);if(storageError){alert('حذف فایل ناموفق بود: '+storageError.message);return;}const {error:dbError}=await supabaseClient.from('site_media').delete().eq('id',id);if(dbError){alert('رکورد عکس حذف نشد: '+dbError.message);return;}await loadAdminMedia();await loadMedia();}
-function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-</script>
-<div id="adminPanel">
-  <div class="adminBox">
-    <button class="adminGhost" onclick="closeAdminPanel()">✕ بستن</button>
-    <h2>👑 پنل مدیریت BioVibe</h2>
-    <div class="adminSection">
-      <h3>👥 مدیریت ادمین‌ها</h3>
-      <div class="adminRow"><input id="newAdminEmail" type="email" placeholder="ایمیل کاربری که باید ادمین شود"><button class="adminPrimary" onclick="addAdmin()">افزودن ادمین</button></div>
-      <div id="adminList"></div>
-    </div>
-    <div class="adminSection">
-      <h3>📝 مدیریت محتوا</h3>
-      <div class="adminRow"><select id="contentSection"><option value="news">Bio-News</option><option value="journal">Bio-Journal Club</option></select></div>
-      <div class="adminRow"><input id="contentTitle" placeholder="عنوان"></div>
-      <div class="adminRow"><textarea id="contentBody" placeholder="متن محتوا"></textarea></div>
-      <button class="adminPrimary" onclick="saveContent()">ذخیره محتوا</button>
-      <div id="contentList" style="margin-top:12px"></div>
-    </div>
-    <div class="adminSection">
-      <h3>🖼️ مدیریت Bio‑Media</h3>
-      <div class="media-admin-box">
-        <div class="adminRow"><input id="mediaTitle" placeholder="عنوان مشترک عکس‌ها (اختیاری)"></div>
-        <div class="adminRow"><textarea id="mediaDescription" placeholder="توضیح مشترک عکس‌ها (اختیاری)" style="min-height:80px"></textarea></div>
-        <div class="adminRow"><input id="mediaFiles" type="file" accept="image/*" multiple onchange="previewMediaFiles(event)"><button class="adminPrimary" onclick="uploadMediaFiles()">آپلود عکس‌ها</button></div>
-        <div id="mediaFilePreview" class="media-file-list"></div>
-        <div id="mediaAdminStatus" style="margin-top:10px;color:#c5dde0"></div>
+<button id="bvAdminBtn" onclick="BVAdmin.open()">⚙️ پنل مدیریت</button>
+<div id="bvAdminOverlay">
+  <div id="bvAdminPanel">
+    <div class="bv-flex"><h2>⚙️ پنل مدیریت BioVibe</h2><button class="bv-btn bv-muted" onclick="BVAdmin.close()">بستن</button></div>
+    <div id="bvAdminStatus" class="bv-status"></div>
+    <h3>👥 مدیریت ادمین‌ها</h3>
+    <p>ایمیل کاربری که قبلاً در سایت ثبت‌نام کرده را وارد کن تا ادمین شود.</p>
+    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="admin@example.com"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن ادمین</button></div>
+    <div id="bvAdminList"></div>
+    <hr style="border-color:#00eaff22;margin:24px 0">
+    <h3>📝 افزودن محتوا</h3>
+    <div class="bv-row"><div class="bv-half"><select id="bvSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Media</option><option>Bio-Lab</option><option>Bio-Company</option></select></div><div class="bv-half"><input id="bvTitle" placeholder="عنوان"></div></div>
+    <textarea id="bvDescription" rows="6" placeholder="متن محتوا"></textarea>
+    <div class="bv-row" style="margin-top:10px">
+      <div class="bv-half">
+        <label style="display:block;margin-bottom:7px">🖼️ تصویر</label>
+        <input id="bvImageFile" type="file" accept="image/*" onchange="BVAdmin.previewImage(event)">
+        <div id="bvImagePreview" style="margin-top:10px"></div>
       </div>
-      <div id="mediaAdminList" style="margin-top:12px"></div>
+      <div class="bv-half"><input id="bvLinkUrl" placeholder="لینک مطلب"></div>
     </div>
+    <button class="bv-btn bv-primary" onclick="BVAdmin.addContent()">+ انتشار محتوا</button>
+    <div id="bvContentList" style="margin-top:18px"></div>
   </div>
 </div>
 
+<script id="biovibe-admin-js">
+window.BVAdmin = (() => {
+  const $=id=>document.getElementById(id);
+  function status(msg,ok=true){const el=$('bvAdminStatus');el.style.display='block';el.textContent=msg;el.style.border=ok?'1px solid #00eaff55':'1px solid #ff668855';}
+  async function isAdmin(){ const {data,error}=await supabaseClient.rpc('is_current_user_admin'); return !error && data===true; }
+  async function refreshButton(){ if(await isAdmin()) $('bvAdminBtn').style.display='block'; else $('bvAdminBtn').style.display='none'; }
+  async function open(){ if(!(await isAdmin())){alert('دسترسی ادمین ندارید.');return;} $('bvAdminOverlay').style.display='block'; await Promise.all([loadAdmins(),loadContents()]); }
+  function close(){$('bvAdminOverlay').style.display='none'}
+  async function loadAdmins(){ const {data,error}=await supabaseClient.rpc('list_admins'); if(error){status(error.message,false);return;} $('bvAdminList').innerHTML=data.map(a=>`<div class="bv-item"><div class="bv-flex"><div><b>${escapeHtml(a.email)}</b><br><small>${a.id}</small></div><button class="bv-btn bv-danger" onclick="BVAdmin.removeAdmin('${a.email}')">حذف ادمین</button></div></div>`).join('') || '<p>ادمینی ثبت نشده است.</p>'; }
+  async function addAdmin(){ const email=$('bvAdminEmail').value.trim(); if(!email)return alert('ایمیل را وارد کن.'); const {data,error}=await supabaseClient.rpc('set_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('ادمین با موفقیت اضافه شد.'); $('bvAdminEmail').value=''; await loadAdmins(); }
+  async function removeAdmin(email){ if(!confirm('این کاربر از لیست ادمین‌ها حذف شود؟'))return; const {error}=await supabaseClient.rpc('remove_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('دسترسی ادمین حذف شد.'); await loadAdmins(); }
+  function previewImage(event){
+    const file=event.target.files && event.target.files[0];
+    const box=$('bvImagePreview');
+    if(!file){box.innerHTML='';return;}
+    if(!file.type.startsWith('image/')){box.innerHTML='';alert('لطفاً یک فایل تصویری انتخاب کن.');event.target.value='';return;}
+    if(file.size>8*1024*1024){box.innerHTML='';alert('حجم تصویر نباید بیشتر از 8MB باشد.');event.target.value='';return;}
+    const url=URL.createObjectURL(file);
+    box.innerHTML=`<img src="${url}" style="max-width:220px;max-height:160px;border-radius:12px;border:1px solid #00eaff55;object-fit:cover" alt="preview">`;
+  }
+  async function uploadImage(file){
+    const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+    const path=`content/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const {error}=await supabaseClient.storage.from('images').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
+    if(error) throw error;
+    const {data}=supabaseClient.storage.from('images').getPublicUrl(path);
+    return data.publicUrl;
+  }
+  async function addContent(){
+    const title=$('bvTitle').value.trim();
+    if(!title)return alert('عنوان را وارد کن.');
+    const file=$('bvImageFile').files && $('bvImageFile').files[0];
+    try{
+      status(file?'در حال آپلود تصویر...':'در حال انتشار...');
+      let image_url=null;
+      if(file) image_url=await uploadImage(file);
+      const payload={section:$('bvSection').value,title,description:$('bvDescription').value.trim(),image_url,link_url:$('bvLinkUrl').value.trim()||null};
+      const {error}=await supabaseClient.from('contents').insert(payload);
+      if(error) throw error;
+      status('محتوا و تصویر با موفقیت منتشر شد.');
+      $('bvTitle').value='';$('bvDescription').value='';$('bvLinkUrl').value='';$('bvImageFile').value='';$('bvImagePreview').innerHTML='';
+      await loadContents();
+    }catch(e){status(e.message||'خطا در انتشار محتوا',false);}
+  }
+  async function loadContents(){ const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50); if(error){$('bvContentList').innerHTML='';return;} $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+data.map(x=>`<div class="bv-item"><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}</small><p>${escapeHtml(x.description||'')}</p></div>`).join(''); }
+  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+  supabaseClient.auth.onAuthStateChange(()=>setTimeout(refreshButton,100));
+  setTimeout(refreshButton,500);
+  return {open,close,addAdmin,removeAdmin,addContent,previewImage};
+})();
+</script>
 </body>
 </html>
