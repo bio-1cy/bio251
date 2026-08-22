@@ -272,13 +272,14 @@
 
         <div class="loginTitle" id="authTitle">BioVibe</div>
         
-        <label class="fieldLabel" for="user">ایمیل</label>
+        <label class="fieldLabel" id="userLabel" for="user">نام کاربری</label>
         <input id="user" placeholder="نام کاربری" autocomplete="username">
 
         <label class="fieldLabel" for="pass">رمز عبور</label>
         <input id="pass" type="password" placeholder="رمز عبور" autocomplete="current-password">
 
-        <input id="email" placeholder="ایمیل" style="display:none;" autocomplete="email">
+        <label class="fieldLabel" id="emailLabel" for="email" style="display:none;">ایمیل</label>
+        <input id="email" type="email" placeholder="ایمیل" style="display:none;" autocomplete="email">
 
         <button id="mainBtn" onclick="handleAuth()">ورود</button>
 
@@ -352,12 +353,16 @@
         const authTitle = document.getElementById('authTitle');
         const mainBtn = document.getElementById('mainBtn');
         const emailField = document.getElementById('email');
+        const emailLabel = document.getElementById('emailLabel');
         const passField = document.getElementById('pass');
         const toggleLink = document.getElementById('toggleLink');
+        const userLabel = document.getElementById('userLabel');
 
         if(mode === 'register') {
             authTitle.innerText = "BioVibe";
             mainBtn.innerText = "ثبت‌نام";
+            userLabel.innerText = "نام کاربری";
+            emailLabel.style.display = "block";
             emailField.style.display = "block";
             passField.style.display = "block";
             toggleLink.innerHTML = "ورود به حساب";
@@ -365,6 +370,8 @@
         } else if(mode === 'login') {
             authTitle.innerText = "BioVibe";
             mainBtn.innerText = "ورود";
+            userLabel.innerText = "نام کاربری";
+            emailLabel.style.display = "none";
             emailField.style.display = "none";
             passField.style.display = "block";
             toggleLink.innerHTML = "ثبت‌نام می‌کنم";
@@ -372,6 +379,8 @@
         } else {
             authTitle.innerText = "BioVibe";
             mainBtn.innerText = "ارسال کد";
+            userLabel.innerText = "نام کاربری";
+            emailLabel.style.display = "block";
             emailField.style.display = "block";
             passField.style.display = "none";
             toggleLink.innerHTML = "برگشت به ورود";
@@ -395,10 +404,16 @@
             btn.innerText = "در حال ورود...";
 
             const { data: loginEmail, error: lookupError } = await supabaseClient.rpc('get_login_email', { p_username: u });
-            if (lookupError || !loginEmail) {
+            if (lookupError) {
                 btn.disabled = false;
                 btn.innerText = "ورود";
-                alert("نام کاربری یا رمز عبور نادرست است.");
+                alert("خطای اتصال ورود: " + lookupError.message + "\n\nابتدا فایل SQL اصلاحی را در Supabase اجرا کن.");
+                return;
+            }
+            if (!loginEmail) {
+                btn.disabled = false;
+                btn.innerText = "ورود";
+                alert("این نام کاربری پیدا نشد.");
                 return;
             }
             const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -450,14 +465,14 @@
                 return;
             }
 
-            if (data.session) {
-                alert("ثبت‌نام با موفقیت انجام شد.");
-                document.getElementById('loginPage').style.display = "none";
-                document.getElementById('mainSite').style.display = "block";
-                checkAdmin();
+            if (data.user) {
+                alert(data.session
+                    ? "ثبت‌نام با موفقیت انجام شد و وارد سایت شدید."
+                    : "ثبت‌نام با موفقیت انجام شد. اکنون با نام کاربری و رمز عبور وارد شوید."
+                );
+                if (!data.session) switchMode('login');
             } else {
-                alert("ثبت‌نام انجام شد. اگر تأیید ایمیل فعال باشد، ایمیل تأیید برای شما ارسال می‌شود.");
-                switchMode('login');
+                alert("ثبت‌نام انجام نشد. دوباره تلاش کنید.");
             }
 
         } else if (currentMode === 'forgot') {
