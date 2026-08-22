@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -565,14 +564,7 @@
     <h3>📝 افزودن محتوا</h3>
     <div class="bv-row"><div class="bv-half"><select id="bvSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Media</option><option>Bio-Lab</option><option>Bio-Company</option></select></div><div class="bv-half"><input id="bvTitle" placeholder="عنوان"></div></div>
     <textarea id="bvDescription" rows="6" placeholder="متن محتوا"></textarea>
-    <div class="bv-row" style="margin-top:10px">
-      <div class="bv-half">
-        <label style="display:block;margin-bottom:7px">🖼️ تصویر</label>
-        <input id="bvImageFile" type="file" accept="image/*" onchange="BVAdmin.previewImage(event)">
-        <div id="bvImagePreview" style="margin-top:10px"></div>
-      </div>
-      <div class="bv-half"><input id="bvLinkUrl" placeholder="لینک مطلب"></div>
-    </div>
+    <div class="bv-row" style="margin-top:10px"><div class="bv-half"><input id="bvImageUrl" placeholder="لینک تصویر (فعلاً URL)"></div><div class="bv-half"><input id="bvLinkUrl" placeholder="لینک مطلب"></div></div>
     <button class="bv-btn bv-primary" onclick="BVAdmin.addContent()">+ انتشار محتوا</button>
     <div id="bvContentList" style="margin-top:18px"></div>
   </div>
@@ -589,44 +581,12 @@ window.BVAdmin = (() => {
   async function loadAdmins(){ const {data,error}=await supabaseClient.rpc('list_admins'); if(error){status(error.message,false);return;} $('bvAdminList').innerHTML=data.map(a=>`<div class="bv-item"><div class="bv-flex"><div><b>${escapeHtml(a.email)}</b><br><small>${a.id}</small></div><button class="bv-btn bv-danger" onclick="BVAdmin.removeAdmin('${a.email}')">حذف ادمین</button></div></div>`).join('') || '<p>ادمینی ثبت نشده است.</p>'; }
   async function addAdmin(){ const email=$('bvAdminEmail').value.trim(); if(!email)return alert('ایمیل را وارد کن.'); const {data,error}=await supabaseClient.rpc('set_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('ادمین با موفقیت اضافه شد.'); $('bvAdminEmail').value=''; await loadAdmins(); }
   async function removeAdmin(email){ if(!confirm('این کاربر از لیست ادمین‌ها حذف شود؟'))return; const {error}=await supabaseClient.rpc('remove_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('دسترسی ادمین حذف شد.'); await loadAdmins(); }
-  function previewImage(event){
-    const file=event.target.files && event.target.files[0];
-    const box=$('bvImagePreview');
-    if(!file){box.innerHTML='';return;}
-    if(!file.type.startsWith('image/')){box.innerHTML='';alert('لطفاً یک فایل تصویری انتخاب کن.');event.target.value='';return;}
-    if(file.size>8*1024*1024){box.innerHTML='';alert('حجم تصویر نباید بیشتر از 8MB باشد.');event.target.value='';return;}
-    const url=URL.createObjectURL(file);
-    box.innerHTML=`<img src="${url}" style="max-width:220px;max-height:160px;border-radius:12px;border:1px solid #00eaff55;object-fit:cover" alt="preview">`;
-  }
-  async function uploadImage(file){
-    const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
-    const path=`content/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const {error}=await supabaseClient.storage.from('images').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
-    if(error) throw error;
-    const {data}=supabaseClient.storage.from('images').getPublicUrl(path);
-    return data.publicUrl;
-  }
-  async function addContent(){
-    const title=$('bvTitle').value.trim();
-    if(!title)return alert('عنوان را وارد کن.');
-    const file=$('bvImageFile').files && $('bvImageFile').files[0];
-    try{
-      status(file?'در حال آپلود تصویر...':'در حال انتشار...');
-      let image_url=null;
-      if(file) image_url=await uploadImage(file);
-      const payload={section:$('bvSection').value,title,description:$('bvDescription').value.trim(),image_url,link_url:$('bvLinkUrl').value.trim()||null};
-      const {error}=await supabaseClient.from('contents').insert(payload);
-      if(error) throw error;
-      status('محتوا و تصویر با موفقیت منتشر شد.');
-      $('bvTitle').value='';$('bvDescription').value='';$('bvLinkUrl').value='';$('bvImageFile').value='';$('bvImagePreview').innerHTML='';
-      await loadContents();
-    }catch(e){status(e.message||'خطا در انتشار محتوا',false);}
-  }
+  async function addContent(){ const payload={section:$('bvSection').value,title:$('bvTitle').value.trim(),description:$('bvDescription').value.trim(),image_url:$('bvImageUrl').value.trim()||null,link_url:$('bvLinkUrl').value.trim()||null}; if(!payload.title)return alert('عنوان را وارد کن.'); const {error}=await supabaseClient.from('contents').insert(payload); if(error){status(error.message,false);return;} status('محتوا منتشر شد.'); $('bvTitle').value='';$('bvDescription').value='';$('bvImageUrl').value='';$('bvLinkUrl').value=''; await loadContents(); }
   async function loadContents(){ const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50); if(error){$('bvContentList').innerHTML='';return;} $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+data.map(x=>`<div class="bv-item"><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}</small><p>${escapeHtml(x.description||'')}</p></div>`).join(''); }
   function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
   supabaseClient.auth.onAuthStateChange(()=>setTimeout(refreshButton,100));
   setTimeout(refreshButton,500);
-  return {open,close,addAdmin,removeAdmin,addContent,previewImage};
+  return {open,close,addAdmin,removeAdmin,addContent};
 })();
 </script>
 </body>
