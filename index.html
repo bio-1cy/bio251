@@ -242,7 +242,7 @@
     .content-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;margin:20px auto;max-width:600px;text-align:right;border:1px solid rgba(255,143,200,.12);box-shadow:0 0 20px rgba(255,143,200,.04);}
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
 </style>
-</head>
+<style id="biovibe-media-css">.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin:22px 0}.media-card{background:rgba(7,27,31,.72);border:1px solid rgba(0,234,255,.18);border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.18)}.media-card img{display:block;width:100%;height:190px;object-fit:cover;background:#071b1f}.media-card-body{padding:12px}.media-card h3{font-size:15px;margin-bottom:5px}.media-card p{color:#c5dde0;font-size:12px;line-height:1.8}.media-empty{margin:24px 0;padding:18px;border:1px dashed rgba(0,234,255,.22);border-radius:16px;color:#c5dde0;text-align:center}.media-admin-box{margin-top:18px;padding:16px;border:1px solid rgba(0,234,255,.18);border-radius:16px;background:rgba(0,0,0,.14)}.media-file-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:10px}.media-file-list img{width:100%;height:90px;object-fit:cover;border-radius:10px;border:1px solid rgba(0,234,255,.18)}#adminBtn{position:fixed !important;right:18px !important;bottom:18px !important;z-index:10001 !important;margin:0 !important}@media(max-width:600px){.media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.media-card img{height:150px}}</style></head>
 
 <body>
 
@@ -273,7 +273,7 @@
         <div class="loginTitle" id="authTitle">BioVibe</div>
         
         <label class="fieldLabel" for="user">ایمیل</label>
-        <input id="user" placeholder="ایمیل" autocomplete="username">
+        <input id="user" placeholder="نام کاربری" autocomplete="username">
 
         <label class="fieldLabel" for="pass">رمز عبور</label>
         <input id="pass" type="password" placeholder="رمز عبور" autocomplete="current-password">
@@ -326,11 +326,7 @@
     </section>
 
     <section id="lab" class="page"><h2>Bio‑Lab</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="media" class="page">
-  <div class="mediaHeader"><div><h2>Bio‑Media</h2><p>گالری تصاویر BioVibe</p></div></div>
-  <div id="mediaGrid" class="mediaGrid"><div class="mediaEmpty">در حال بارگذاری تصاویر...</div></div>
-  <button class="backBtn" onclick="closePages()">بازگشت</button>
-</section>
+    <section id="media" class="page"><h2>Bio‑Media</h2><div id="media-container" class="media-grid"></div><div id="media-empty" class="media-empty" style="display:none;">هنوز عکسی در Bio‑Media منتشر نشده است.</div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="company" class="page"><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
 </div>
 
@@ -391,15 +387,22 @@
 
         if (currentMode === 'login') {
             if (!u || !p) {
-                alert("ایمیل و رمز عبور را وارد کنید");
+                alert("نام کاربری و رمز عبور را وارد کنید");
                 return;
             }
 
             btn.disabled = true;
             btn.innerText = "در حال ورود...";
 
+            const { data: loginEmail, error: lookupError } = await supabaseClient.rpc('get_login_email', { p_username: u });
+            if (lookupError || !loginEmail) {
+                btn.disabled = false;
+                btn.innerText = "ورود";
+                alert("نام کاربری یا رمز عبور نادرست است.");
+                return;
+            }
             const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: u,
+                email: loginEmail,
                 password: p
             });
 
@@ -485,7 +488,7 @@
         }
     }
 
-    function logout(){ location.reload(); }
+    async function logout(){const {error}=await supabaseClient.auth.signOut();if(error){alert("خروج ناموفق بود: "+error.message);return;}document.getElementById('mainSite').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('user').value='';document.getElementById('pass').value='';switchMode('login');}
     function toggleMenu(){ sideMenu.classList.toggle("active") }
 
     function openPage(id){
@@ -555,8 +558,6 @@
 #adminPanel{display:none;position:fixed;inset:0;background:rgba(0,8,10,.82);backdrop-filter:blur(10px);z-index:9999;padding:24px;overflow:auto}
 .adminBox{max-width:760px;margin:60px auto;background:#071b1f;border:1px solid rgba(0,234,255,.35);border-radius:20px;padding:22px;box-shadow:0 0 40px rgba(0,234,255,.12)}
 .adminBox h2{margin-bottom:16px}.adminRow{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.adminBox input,.adminBox textarea,.adminBox select{flex:1;min-width:180px;padding:10px;border-radius:10px;border:1px solid rgba(0,234,255,.3);background:#061417;color:white;font-family:inherit}.adminBox textarea{min-height:100px}.adminBox button{padding:9px 14px;border:0;border-radius:12px;cursor:pointer;font-family:inherit;font-weight:700}.adminPrimary{background:linear-gradient(90deg,#45e9de,#ff9ac9);color:#061317}.adminDanger{background:#ff6b8a;color:#25050d}.adminGhost{background:#123036;color:white}.adminItem{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 0}.adminSection{margin-top:25px;padding-top:18px;border-top:1px solid rgba(0,234,255,.16)}
-
-.mediaHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.mediaHeader h2{margin:0}.mediaHeader p{opacity:.75;margin:6px 0 0}.mediaGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin:18px 0 24px}.mediaCard{background:rgba(7,27,31,.75);border:1px solid rgba(0,234,255,.18);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.18)}.mediaCard img{display:block;width:100%;height:220px;object-fit:cover;background:#061417}.mediaInfo{padding:12px 14px}.mediaInfo h3{margin:0 0 6px;font-size:17px}.mediaInfo p{margin:0;opacity:.78;line-height:1.7}.mediaEmpty{grid-column:1/-1;text-align:center;padding:45px 15px;opacity:.7;border:1px dashed rgba(0,234,255,.2);border-radius:16px}.mediaAdminGrid{display:grid;gap:10px}.mediaPreviewRow{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:10px}.mediaPreview{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(0,234,255,.2)}.mediaPreview img{width:100%;height:100px;object-fit:cover;display:block}.mediaPreview span{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);font-size:11px;padding:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mediaAdminItem{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 0}.mediaAdminItem small{opacity:.7;display:block;margin-top:4px}.adminUploadNote{font-size:12px;opacity:.7;line-height:1.7}
 </style>
 <script>
 let bioVibeIsAdmin = false;
@@ -632,60 +633,11 @@ async function deleteContent(id){
   if(error){alert('خطا: '+error.message);return;}
   loadAdminContent(); loadContent();
 }
-
-async function loadMedia(){
-  const grid=document.getElementById('mediaGrid');
-  if(!grid) return;
-  grid.innerHTML='<div class="mediaEmpty">در حال بارگذاری تصاویر...</div>';
-  const {data,error}=await supabaseClient.from('site_media').select('*').order('created_at',{ascending:false});
-  if(error){ grid.innerHTML='<div class="mediaEmpty">خطا در بارگذاری تصاویر: '+escapeHtml(error.message)+'</div>'; return; }
-  if(!data || !data.length){ grid.innerHTML='<div class="mediaEmpty">هنوز تصویری در Bio‑Media قرار نگرفته است.</div>'; return; }
-  grid.innerHTML=data.map(m=>`<article class="mediaCard"><img src="${escapeHtml(m.public_url)}" alt="${escapeHtml(m.title||'BioVibe image')}" loading="lazy"><div class="mediaInfo"><h3>${escapeHtml(m.title||'بدون عنوان')}</h3>${m.description?`<p>${escapeHtml(m.description)}</p>`:''}</div></article>`).join('');
-}
-function previewMediaFiles(e){
-  const box=document.getElementById('mediaPreviewRow'); box.innerHTML='';
-  [...(e.target.files||[])].forEach(file=>{ const url=URL.createObjectURL(file); const d=document.createElement('div'); d.className='mediaPreview'; d.innerHTML=`<img src="${url}"><span>${escapeHtml(file.name)}</span>`; box.appendChild(d); });
-}
-async function uploadMediaFiles(){
-  const input=document.getElementById('mediaFiles'); const files=[...(input.files||[])];
-  if(!files.length){alert('حداقل یک عکس انتخاب کنید.');return;}
-  const title=document.getElementById('mediaTitle').value.trim();
-  const description=document.getElementById('mediaDescription').value.trim();
-  const btn=document.querySelector('#adminPanel button[onclick="uploadMediaFiles()"]');
-  btn.disabled=true; btn.innerText='در حال آپلود...';
-  try{
-    for(const file of files){
-      if(!file.type.startsWith('image/')) throw new Error('فقط فایل تصویری مجاز است: '+file.name);
-      const safeName=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-      const path=`${crypto.randomUUID()}-${safeName}`;
-      const {error:uploadError}=await supabaseClient.storage.from('biovibe-media').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
-      if(uploadError) throw uploadError;
-      const {data:urlData}=supabaseClient.storage.from('biovibe-media').getPublicUrl(path);
-      const {error:dbError}=await supabaseClient.from('site_media').insert({title:title||file.name,description,file_path:path,public_url:urlData.publicUrl});
-      if(dbError){ await supabaseClient.storage.from('biovibe-media').remove([path]); throw dbError; }
-    }
-    alert(`${files.length} تصویر با موفقیت ذخیره شد.`);
-    input.value=''; document.getElementById('mediaTitle').value=''; document.getElementById('mediaDescription').value=''; document.getElementById('mediaPreviewRow').innerHTML='';
-    loadAdminMedia(); loadMedia();
-  }catch(e){ alert('خطا در آپلود: '+(e.message||e)); }
-  finally{ btn.disabled=false; btn.innerText='آپلود و ذخیره تصاویر'; }
-}
-async function loadAdminMedia(){
-  const box=document.getElementById('mediaAdminList'); if(!box)return;
-  box.innerHTML='در حال بارگذاری...';
-  const {data,error}=await supabaseClient.from('site_media').select('*').order('created_at',{ascending:false});
-  if(error){box.innerHTML='خطا: '+escapeHtml(error.message);return;}
-  box.innerHTML=(data||[]).map(m=>`<div class="mediaAdminItem"><div><b>${escapeHtml(m.title||'بدون عنوان')}</b><small>${new Date(m.created_at).toLocaleString('fa-IR')}</small></div><button class="adminDanger" onclick="deleteMedia('${m.id}','${escapeHtml(m.file_path).replace(/'/g,"\'")}')">حذف</button></div>`).join('') || '<div class="adminUploadNote">هنوز تصویری ثبت نشده است.</div>';
-}
-async function deleteMedia(id,path){
-  if(!confirm('این تصویر حذف شود؟'))return;
-  const {error:dbError}=await supabaseClient.from('site_media').delete().eq('id',id);
-  if(dbError){alert('خطا: '+dbError.message);return;}
-  const {error:storageError}=await supabaseClient.storage.from('biovibe-media').remove([path]);
-  if(storageError){alert('رکورد حذف شد ولی فایل ذخیره‌سازی حذف نشد: '+storageError.message);}
-  loadAdminMedia(); loadMedia();
-}
-
+    function previewMediaFiles(event){const box=document.getElementById('mediaFilePreview');box.innerHTML='';const files=[...(event.target.files||[])];files.slice(0,30).forEach(file=>{if(!file.type.startsWith('image/'))return;const img=document.createElement('img');img.src=URL.createObjectURL(file);img.alt=file.name;box.appendChild(img);});}
+    async function uploadMediaFiles(){if(!bioVibeIsAdmin){alert('دسترسی ادمین ندارید.');return;}const input=document.getElementById('mediaFiles');const files=[...(input.files||[])].slice(0,30);if(!files.length){alert('حداقل یک عکس انتخاب کنید.');return;}const title=document.getElementById('mediaTitle').value.trim()||null;const description=document.getElementById('mediaDescription').value.trim()||null;const status=document.getElementById('mediaAdminStatus');status.textContent='در حال آپلود عکس‌ها...';let done=0;try{for(const file of files){if(!file.type.startsWith('image/'))throw new Error('فقط فایل تصویری مجاز است.');if(file.size>12*1024*1024)throw new Error(`حجم «${file.name}» بیشتر از ۱۲ مگابایت است.`);const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';const path=`gallery/${Date.now()}-${crypto.randomUUID()}.${ext}`;const {error:uploadError}=await supabaseClient.storage.from('biovibe-media').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(uploadError)throw uploadError;const {data:urlData}=supabaseClient.storage.from('biovibe-media').getPublicUrl(path);const {data:userData}=await supabaseClient.auth.getUser();const {error:insertError}=await supabaseClient.from('site_media').insert({path,public_url:urlData.publicUrl,title,description,created_by:userData.user?.id||null});if(insertError){await supabaseClient.storage.from('biovibe-media').remove([path]);throw insertError;}done++;status.textContent=`${done} از ${files.length} عکس آپلود شد...`;}status.textContent=`${done} عکس با موفقیت ذخیره شد.`;input.value='';document.getElementById('mediaFilePreview').innerHTML='';document.getElementById('mediaTitle').value='';document.getElementById('mediaDescription').value='';await loadMedia();await loadAdminMedia();}catch(e){status.textContent='خطا: '+(e?.message||e);}}
+    async function loadMedia(){const box=document.getElementById('media-container'),empty=document.getElementById('media-empty');if(!box)return;box.innerHTML='<div style="color:#c5dde0">در حال بارگذاری...</div>';const {data,error}=await supabaseClient.from('site_media').select('id,title,description,public_url,created_at').order('created_at',{ascending:false});if(error){box.innerHTML='<div style="color:#ff9ac8">خطا در بارگذاری تصاویر.</div>';return;}if(!data?.length){box.innerHTML='';empty.style.display='block';return;}empty.style.display='none';box.innerHTML=data.map(item=>`<article class="media-card"><img src="${item.public_url}" alt="${escapeHtml(item.title||'BioVibe')}"><div class="media-card-body">${item.title?`<h3>${escapeHtml(item.title)}</h3>`:''}${item.description?`<p>${escapeHtml(item.description)}</p>`:''}</div></article>`).join('');}
+    async function loadAdminMedia(){const box=document.getElementById('mediaAdminList');if(!box||!bioVibeIsAdmin)return;const {data,error}=await supabaseClient.from('site_media').select('id,title,public_url,path').order('created_at',{ascending:false});if(error){box.innerHTML='<div style="color:#ff9ac8">خطا در دریافت فهرست عکس‌ها.</div>';return;}box.innerHTML=(data||[]).map(item=>`<div class="adminItem"><div style="display:flex;align-items:center;gap:10px"><img src="${item.public_url}" style="width:54px;height:42px;object-fit:cover;border-radius:8px"><span>${escapeHtml(item.title||'بدون عنوان')}</span></div><button class="adminDanger" onclick="deleteMedia(${item.id},'${encodeURIComponent(item.path)}')">حذف</button></div>`).join('')||'<div style="color:#c5dde0">عکسی ثبت نشده است.</div>';}
+    async function deleteMedia(id,encodedPath){if(!confirm('این عکس حذف شود؟'))return;const path=decodeURIComponent(encodedPath);const {error:storageError}=await supabaseClient.storage.from('biovibe-media').remove([path]);if(storageError){alert('حذف فایل ناموفق بود: '+storageError.message);return;}const {error:dbError}=await supabaseClient.from('site_media').delete().eq('id',id);if(dbError){alert('رکورد عکس حذف نشد: '+dbError.message);return;}await loadAdminMedia();await loadMedia();}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
 </script>
 <div id="adminPanel">
@@ -694,23 +646,9 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;',
     <h2>👑 پنل مدیریت BioVibe</h2>
     <div class="adminSection">
       <h3>👥 مدیریت ادمین‌ها</h3>
-      <div class="adminRow"><input id="newAdminEmail" type="email" placeholder="ایمیل کاربری که باید ادمین شود"><button class="adminPrimary" onclick="addAdmin()">افزودن ادمین</button></div>
+      <div class="adminRow"><input id="newAdminEmail" type="email" placeholder="ایمیل کاربر"><button class="adminPrimary" onclick="addAdmin()">افزودن ادمین</button></div>
       <div id="adminList"></div>
     </div>
-
-    <div class="adminSection">
-      <h3>🖼️ مدیریت Bio‑Media</h3>
-      <div class="mediaAdminGrid">
-        <input id="mediaTitle" placeholder="عنوان تصاویر (اختیاری)">
-        <textarea id="mediaDescription" placeholder="توضیح تصاویر (اختیاری)" style="min-height:70px"></textarea>
-        <input id="mediaFiles" type="file" accept="image/*" multiple onchange="previewMediaFiles(event)">
-        <div class="adminUploadNote">می‌توانید هم‌زمان چند عکس انتخاب کنید. فرمت‌های تصویری مجاز هستند.</div>
-        <div id="mediaPreviewRow" class="mediaPreviewRow"></div>
-        <button class="adminPrimary" onclick="uploadMediaFiles()">آپلود و ذخیره تصاویر</button>
-      </div>
-      <div id="mediaAdminList" style="margin-top:14px"></div>
-    </div>
-
     <div class="adminSection">
       <h3>📝 مدیریت محتوا</h3>
       <div class="adminRow"><select id="contentSection"><option value="news">Bio-News</option><option value="journal">Bio-Journal Club</option></select></div>
@@ -718,6 +656,17 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;',
       <div class="adminRow"><textarea id="contentBody" placeholder="متن محتوا"></textarea></div>
       <button class="adminPrimary" onclick="saveContent()">ذخیره محتوا</button>
       <div id="contentList" style="margin-top:12px"></div>
+    </div>
+    <div class="adminSection">
+      <h3>🖼️ مدیریت Bio‑Media</h3>
+      <div class="media-admin-box">
+        <div class="adminRow"><input id="mediaTitle" placeholder="عنوان مشترک عکس‌ها (اختیاری)"></div>
+        <div class="adminRow"><textarea id="mediaDescription" placeholder="توضیح مشترک عکس‌ها (اختیاری)" style="min-height:80px"></textarea></div>
+        <div class="adminRow"><input id="mediaFiles" type="file" accept="image/*" multiple onchange="previewMediaFiles(event)"><button class="adminPrimary" onclick="uploadMediaFiles()">آپلود عکس‌ها</button></div>
+        <div id="mediaFilePreview" class="media-file-list"></div>
+        <div id="mediaAdminStatus" style="margin-top:10px;color:#c5dde0"></div>
+      </div>
+      <div id="mediaAdminList" style="margin-top:12px"></div>
     </div>
   </div>
 </div>
