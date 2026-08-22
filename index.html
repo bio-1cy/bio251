@@ -515,32 +515,15 @@
     }
 
     async function loadContent(){
-        const nCont = document.getElementById("news-container");
-        const jCont = document.getElementById("journal-container");
         try {
-            const {data, error} = await supabaseClient.from("contents").select("*").order("created_at", {ascending:false});
-            if(error) throw error;
-            const render = (items) => items.map(item => {
-                const image = item.image_url ? `<img src="${item.image_url}" alt="" style="width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin:10px 0">` : "";
-                const link = item.link_url ? `<p><a href="${item.link_url}" target="_blank" rel="noopener">مشاهده مطلب ↗</a></p>` : "";
-                return `<div class="content-card"><h3>${escapeCms(item.title)}</h3>${image}<p>${escapeCms(item.description || "")}</p>${link}</div>`;
-            }).join("");
-            const news = (data || []).filter(x => x.section === "Bio-News");
-            const journal = (data || []).filter(x => x.section === "Bio-Journal Club");
-            nCont.innerHTML = render(news);
-            jCont.innerHTML = render(journal);
-            return;
-        } catch (e) {
-            console.log("Supabase content load error", e);
-            try {
-                const res = await fetch("biovibe-data.json");
-                const data = await res.json();
-                if(data.news) nCont.innerHTML = data.news.map(item => `<div class="content-card"><h3>${escapeCms(item.title)}</h3><p>${escapeCms(item.text || "")}</p></div>`).join("");
-                if(data.journal) jCont.innerHTML = data.journal.map(item => `<div class="content-card"><h3>${escapeCms(item.title)}</h3><p>${escapeCms(item.text || "")}</p></div>`).join("");
-            } catch (_) {}
-        }
+            const res = await fetch("biovibe-data.json");
+            const data = await res.json();
+            const nCont = document.getElementById("news-container");
+            const jCont = document.getElementById("journal-container");
+            if(data.news) data.news.forEach(item => nCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
+            if(data.journal) data.journal.forEach(item => jCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
+        } catch (e) { console.log("JSON Load Error"); }
     }
-    function escapeCms(s){ return String(s).replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
     async function restoreSession() {
         const { data } = await supabaseClient.auth.getSession();
 
@@ -574,7 +557,7 @@
     <div class="bv-flex"><h2>⚙️ پنل مدیریت BioVibe</h2><button class="bv-btn bv-muted" onclick="BVAdmin.close()">بستن</button></div>
     <div id="bvAdminStatus" class="bv-status"></div>
     <h3>👥 مدیریت ادمین‌ها</h3>
-    <p>ایمیل کاربری که قبلاً در سایت ثبت‌نام کرده را وارد کن تا ادمین شود. تصویرها را هم مستقیم از گوشی یا کامپیوتر انتخاب می‌کنی.</p>
+    <p>ایمیل کاربری که قبلاً در سایت ثبت‌نام کرده را وارد کن تا ادمین شود.</p>
     <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="admin@example.com"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن ادمین</button></div>
     <div id="bvAdminList"></div>
     <hr style="border-color:#00eaff22;margin:24px 0">
@@ -617,9 +600,9 @@ window.BVAdmin = (() => {
   async function uploadImage(file){
     const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
     const path=`content/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const {error}=await supabaseClient.storage.from('biovibe-images').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
+    const {error}=await supabaseClient.storage.from('images').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
     if(error) throw error;
-    const {data}=supabaseClient.storage.from('biovibe-images').getPublicUrl(path);
+    const {data}=supabaseClient.storage.from('images').getPublicUrl(path);
     return data.publicUrl;
   }
   async function addContent(){
@@ -636,15 +619,13 @@ window.BVAdmin = (() => {
       status('محتوا و تصویر با موفقیت منتشر شد.');
       $('bvTitle').value='';$('bvDescription').value='';$('bvLinkUrl').value='';$('bvImageFile').value='';$('bvImagePreview').innerHTML='';
       await loadContents();
-      if(typeof loadContent==='function') await loadContent();
     }catch(e){status(e.message||'خطا در انتشار محتوا',false);}
   }
-  async function loadContents(){ const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50); if(error){$('bvContentList').innerHTML='<p>'+escapeHtml(error.message)+'</p>';return;} $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+((data||[]).map(x=>`<div class="bv-item"><div class="bv-flex"><div><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}</small><p>${escapeHtml(x.description||'')}</p></div><button class="bv-btn bv-danger" onclick="BVAdmin.deleteContent('${x.id}')">حذف</button></div></div>`).join('') || '<p>هنوز محتوایی ثبت نشده است.</p>'); }
-  async function deleteContent(id){ if(!confirm('این محتوا حذف شود؟')) return; const {error}=await supabaseClient.from('contents').delete().eq('id',id); if(error){status(error.message,false);return;} status('محتوا حذف شد.'); await loadContents(); if(typeof loadContent==='function') await loadContent(); }
+  async function loadContents(){ const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50); if(error){$('bvContentList').innerHTML='';return;} $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+data.map(x=>`<div class="bv-item"><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}</small><p>${escapeHtml(x.description||'')}</p></div>`).join(''); }
   function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
   supabaseClient.auth.onAuthStateChange(()=>setTimeout(refreshButton,100));
   setTimeout(refreshButton,500);
-  return {open,close,addAdmin,removeAdmin,addContent,deleteContent,previewImage};
+  return {open,close,addAdmin,removeAdmin,addContent,previewImage};
 })();
 </script>
 </body>
