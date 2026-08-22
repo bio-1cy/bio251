@@ -488,7 +488,24 @@
         }
     }
 
-    async function logout(){const {error}=await supabaseClient.auth.signOut();if(error){alert("خروج ناموفق بود: "+error.message);return;}document.getElementById('mainSite').style.display='none';document.getElementById('loginPage').style.display='flex';document.getElementById('user').value='';document.getElementById('pass').value='';switchMode('login');}
+    async function logout(){
+        try {
+            const {error}=await supabaseClient.auth.signOut({scope:'global'});
+            if(error) throw error;
+        } catch(e) {
+            console.error('Logout error:', e);
+        }
+        // قطع کامل ورود محلی تا بعد از رفرش دوباره خودکار وارد سایت نشود
+        try {
+            Object.keys(localStorage).filter(k=>k.startsWith('sb-') && k.endsWith('-auth-token')).forEach(k=>localStorage.removeItem(k));
+            Object.keys(sessionStorage).filter(k=>k.startsWith('sb-') && k.endsWith('-auth-token')).forEach(k=>sessionStorage.removeItem(k));
+        } catch(e) {}
+        document.getElementById('mainSite').style.display='none';
+        document.getElementById('loginPage').style.display='flex';
+        document.getElementById('user').value='';
+        document.getElementById('pass').value='';
+        switchMode('login');
+    }
     function toggleMenu(){ sideMenu.classList.toggle("active") }
 
     function openPage(id){
@@ -524,32 +541,24 @@
             if(json.journal) json.journal.forEach(item=>jCont.innerHTML += `<div class="content-card"><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div>`);
         } catch(e) { console.log("Content Load Error",e); }
     }
-    async function restoreSession() {
-        const { data } = await supabaseClient.auth.getSession();
-
-        if (data.session) {
-            document.getElementById('loginPage').style.display = "none";
-            document.getElementById('mainSite').style.display = "block";
-            checkAdmin();
-        } else {
-            document.getElementById('loginPage').style.display = "flex";
-            document.getElementById('mainSite').style.display = "none";
-        }
+    // صفحه ورود در هر بار باز شدن سایت نمایش داده می‌شود.
+    // Session قبلی باعث رد شدن خودکار از صفحه ورود نمی‌شود.
+    function showLoginPage(){
+        document.getElementById('loginPage').style.display = "flex";
+        document.getElementById('mainSite').style.display = "none";
+    }
+    function showMainSite(){
+        document.getElementById('loginPage').style.display = "none";
+        document.getElementById('mainSite').style.display = "block";
+        checkAdmin();
     }
 
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_IN" && session) {
-            document.getElementById('loginPage').style.display = "none";
-            document.getElementById('mainSite').style.display = "block";
-            checkAdmin();
-        }
-        if (event === "SIGNED_OUT") {
-            document.getElementById('loginPage').style.display = "flex";
-            document.getElementById('mainSite').style.display = "none";
-        }
-    });
+    showLoginPage();
 
-    restoreSession();
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_IN" && session) showMainSite();
+        if (event === "SIGNED_OUT") showLoginPage();
+    });
     loadContent();
 </script>
 
@@ -646,7 +655,7 @@ function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;',
     <h2>👑 پنل مدیریت BioVibe</h2>
     <div class="adminSection">
       <h3>👥 مدیریت ادمین‌ها</h3>
-      <div class="adminRow"><input id="newAdminEmail" type="email" placeholder="ایمیل کاربر"><button class="adminPrimary" onclick="addAdmin()">افزودن ادمین</button></div>
+      <div class="adminRow"><input id="newAdminEmail" type="email" placeholder="ایمیل کاربری که باید ادمین شود"><button class="adminPrimary" onclick="addAdmin()">افزودن ادمین</button></div>
       <div id="adminList"></div>
     </div>
     <div class="adminSection">
