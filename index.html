@@ -322,6 +322,7 @@
         <a onclick="openPage('company')">Bio‑Company</a>
         <a onclick="openPage('news')">Bio‑News</a>
         <a onclick="openPage('journal')">Bio‑Journal Club</a>
+        <a onclick="openPage('photos')">Bio‑Photos</a>
     </div>
 
     <section id="heroSection" class="hero">
@@ -330,6 +331,11 @@
             <div class="rung" style="--i:1"></div><div class="rung" style="--i:2"></div><div class="rung" style="--i:3"></div><div class="rung" style="--i:4"></div><div class="rung" style="--i:5"></div><div class="rung" style="--i:6"></div><div class="rung" style="--i:7"></div><div class="rung" style="--i:8"></div><div class="rung" style="--i:9"></div><div class="rung" style="--i:10"></div>
         </div>
         <div class="hero-content"><h1>BIOVIBE</h1><p>انجمن علمی زیست شناسی</p></div>
+    </section>
+
+    <section id="bvPhotoHome">
+        <h2>Bio‑Photos</h2>
+        <div id="home-photos-container" class="bv-home-gallery"></div>
     </section>
 
     <section id="news" class="page">
@@ -347,6 +353,7 @@
     <section id="lab" class="page"><h2>Bio‑Lab</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="media" class="page"><h2>Bio‑Media</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="company" class="page"><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="photos" class="page"><h2>Bio‑Photos</h2><div id="photos-container" class="bv-home-gallery"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -509,11 +516,28 @@
         }
     }
 
-    function logout(){ location.reload(); }
+    async function logout(){
+        const btn=document.querySelector('.logout-btn');
+        if(btn) btn.disabled=true;
+        try {
+            const { error } = await supabaseClient.auth.signOut({ scope: 'global' });
+            if (error) throw error;
+        } catch (e) {
+            console.error("Logout error", e);
+        } finally {
+            document.getElementById('bvAdminOverlay')?.style && (document.getElementById('bvAdminOverlay').style.display='none');
+            const adminBtn=document.getElementById('bvAdminBtn'); if(adminBtn) adminBtn.style.display='none';
+            document.getElementById('mainSite').style.display='none';
+            document.getElementById('loginPage').style.display='flex';
+            document.getElementById('pass').value='';
+            if(btn) btn.disabled=false;
+        }
+    }
     function toggleMenu(){ sideMenu.classList.toggle("active") }
 
     function openPage(id){
         document.getElementById("heroSection").style.display="none";
+        document.getElementById("bvPhotoHome").style.display="none";
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
         document.getElementById(id).style.display="block";
         sideMenu.classList.remove("active");
@@ -522,41 +546,46 @@
     function closePages(){
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
         document.getElementById("heroSection").style.display="flex";
+        const hp=document.getElementById("bvPhotoHome"); if(hp) hp.style.display="block";
     }
 
+    function openLightbox(url){
+        const lb=document.getElementById('bvLightbox'), img=document.getElementById('bvLightboxImg');
+        if(!lb||!img)return; img.src=url; lb.style.display='flex'; document.body.style.overflow='hidden';
+    }
+    function closeLightbox(e){
+        if(e && e.target && e.target.id==='bvLightboxImg') return;
+        const lb=document.getElementById('bvLightbox'); if(lb) lb.style.display='none';
+        document.body.style.overflow='';
+    }
+    window.openLightbox=openLightbox; window.closeLightbox=closeLightbox;
+
+    function renderImages(urls){
+        return urls.length ? `<div class="bv-gallery">${urls.map(u=>`<img src="${escapeCms(u)}" alt="" loading="lazy" onclick="openLightbox('${escapeCms(u)}')">`).join('')}</div>` : '';
+    }
     async function loadContent(){
-        const nCont = document.getElementById("news-container");
-        const jCont = document.getElementById("journal-container");
+        const nCont=document.getElementById('news-container'), jCont=document.getElementById('journal-container');
+        const homeCont=document.getElementById('home-photos-container'), pagePhotos=document.getElementById('photos-container'), homeSection=document.getElementById('bvPhotoHome');
         try {
-            const {data, error} = await supabaseClient.from("contents").select("*").order("created_at", {ascending:false});
+            const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false});
             if(error) throw error;
-            const render = (items) => items.map(item => {
-                let urls = [];
-                try { urls = Array.isArray(item.image_urls) ? item.image_urls : (item.image_url ? [item.image_url] : []); } catch (_) {}
-                const images = urls.length
-                    ? `<div class="bv-gallery">${urls.map(u => `<img src="${escapeCms(u)}" alt="" loading="lazy">`).join("")}</div>`
-                    : "";
-                let files = [];
-                try { files = Array.isArray(item.attachment_urls) ? item.attachment_urls : []; } catch (_) {}
-                const attachments = files.length
-                    ? `<div class="bv-attachments"><b>📎 فایل‌های مرتبط</b>${files.map(f => `<a href="${escapeCms(f.url || f)}" target="_blank" rel="noopener">⬇️ ${escapeCms(f.name || "دریافت فایل")}</a>`).join("")}</div>`
-                    : "";
-                const link = item.link_url ? `<p><a href="${escapeCms(item.link_url)}" target="_blank" rel="noopener">مشاهده مطلب ↗</a></p>` : "";
-                return `<div class="content-card"><h3>${escapeCms(item.title)}</h3>${images}<p>${escapeCms(item.description || "")}</p>${attachments}${link}</div>`;
-            }).join("");
-            const news = (data || []).filter(x => x.section === "Bio-News");
-            const journal = (data || []).filter(x => x.section === "Bio-Journal Club");
-            nCont.innerHTML = render(news);
-            jCont.innerHTML = render(journal);
-            return;
-        } catch (e) {
-            console.log("Supabase content load error", e);
-            try {
-                const res = await fetch("biovibe-data.json");
-                const data = await res.json();
-                if(data.news) nCont.innerHTML = data.news.map(item => `<div class="content-card"><h3>${escapeCms(item.title)}</h3><p>${escapeCms(item.text || "")}</p></div>`).join("");
-                if(data.journal) jCont.innerHTML = data.journal.map(item => `<div class="content-card"><h3>${escapeCms(item.title)}</h3><p>${escapeCms(item.text || "")}</p></div>`).join("");
-            } catch (_) {}
+            const rows=data||[];
+            const getUrls=item=>{try{return Array.isArray(item.image_urls)?item.image_urls:(item.image_url?[item.image_url]:[])}catch(_){return []}};
+            const render=items=>items.map(item=>{
+                const urls=getUrls(item); let files=[]; try{files=Array.isArray(item.attachment_urls)?item.attachment_urls:[]}catch(_){}
+                const attachments=files.length?`<div class="bv-attachments"><b>📎 فایل‌های مرتبط</b>${files.map(f=>`<a href="${escapeCms(f.url||f)}" target="_blank" rel="noopener">⬇️ ${escapeCms(f.name||'دریافت فایل')}</a>`).join('')}</div>`:'';
+                const link=item.link_url?`<p><a href="${escapeCms(item.link_url)}" target="_blank" rel="noopener">مشاهده مطلب ↗</a></p>`:'';
+                return `<div class="content-card"><h3>${escapeCms(item.title)}</h3>${renderImages(urls)}<p>${escapeCms(item.description||'')}</p>${attachments}${link}</div>`;
+            }).join('');
+            nCont.innerHTML=render(rows.filter(x=>x.section==='Bio-News'));
+            jCont.innerHTML=render(rows.filter(x=>x.section==='Bio-Journal Club'));
+            const photos=rows.filter(x=>x.section==='Bio-Photos');
+            const allPhotos=photos.flatMap(getUrls);
+            const gallery=allPhotos.length?allPhotos.map(u=>`<img src="${escapeCms(u)}" alt="" loading="lazy" onclick="openLightbox('${escapeCms(u)}')">`).join(''):'<p>هنوز عکسی ثبت نشده است.</p>';
+            homeCont.innerHTML=gallery; pagePhotos.innerHTML=gallery+'<button class="backBtn" onclick="closePages()">بازگشت</button>'; homeSection.style.display=allPhotos.length?'block':'none';
+        } catch(e) {
+            console.log('Supabase content load error',e);
+            nCont.innerHTML=''; jCont.innerHTML=''; homeSection.style.display='none';
         }
     }
     function escapeCms(s){ return String(s).replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
@@ -580,6 +609,8 @@
         if (event === "SIGNED_OUT") {
             document.getElementById('loginPage').style.display = "flex";
             document.getElementById('mainSite').style.display = "none";
+            const adminBtn = document.getElementById('bvAdminBtn');
+            if (adminBtn) adminBtn.style.display = 'none';
         }
     });
 
@@ -587,33 +618,34 @@
     loadContent();
 </script>
 
+<div id="bvLightbox" onclick="closeLightbox(event)"><button id="bvLightboxClose" onclick="closeLightbox(event)">×</button><img id="bvLightboxImg" alt="تصویر کامل"></div>
 <button id="bvAdminBtn" onclick="BVAdmin.open()">⚙️ پنل مدیریت</button>
 <div id="bvAdminOverlay">
   <div id="bvAdminPanel">
     <div class="bv-flex"><h2>⚙️ پنل مدیریت BioVibe</h2><button class="bv-btn bv-muted" onclick="BVAdmin.close()">بستن</button></div>
     <div id="bvAdminStatus" class="bv-status"></div>
-    <h3>👥 مدیریت ادمین‌ها</h3>
-    <p>ایمیل ادمین جدید</p>
-    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="ایمیل ادمین جدید"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن ادمین</button></div>
+    <h3>👥 ادمین‌ها</h3>
+    
+    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="ادمین جدید"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن</button></div>
     <div id="bvAdminList"></div>
     <hr style="border-color:#00eaff22;margin:24px 0">
-    <h3>📝 افزودن محتوا</h3>
+    <h3>📝 محتوا</h3>
     <div class="bv-row"><div class="bv-half"><select id="bvSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Media</option><option>Bio-Lab</option><option>Bio-Company</option></select></div><div class="bv-half"><input id="bvTitle" placeholder="عنوان"></div></div>
     <textarea id="bvDescription" rows="6" placeholder="متن محتوا"></textarea>
     <div class="bv-row" style="margin-top:10px">
       <div class="bv-half">
-        <label style="display:block;margin-bottom:7px">🖼️ تصویر</label>
+        <label style="display:block;margin-bottom:7px">🖼️ تصاویر</label>
         <input id="bvImageFile" type="file" accept="image/*" multiple onchange="BVAdmin.previewImage(event)">
-        <div class="bv-upload-count" id="bvImageCount">می‌توانی چند تصویر انتخاب کنی.</div>
+        <div class="bv-upload-count" id="bvImageCount">چند تصویر</div>
         <div id="bvImagePreview" class="bv-upload-list"></div>
         <label style="display:block;margin:14px 0 7px">📎 فایل‌های ضمیمه</label>
         <input id="bvAttachmentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx" onchange="BVAdmin.previewAttachments(event)">
         <div class="bv-upload-count" id="bvAttachmentCount">PDF، Word و PowerPoint؛ هر فایل حداکثر 20MB.</div>
         <div id="bvAttachmentPreview" class="bv-upload-list"></div>
       </div>
-      <div class="bv-half"><input id="bvLinkUrl" placeholder="لینک مطلب"></div>
+      <div class="bv-half"><input id="bvLinkUrl" placeholder="لینک"></div>
     </div>
-    <button class="bv-btn bv-primary" onclick="BVAdmin.addContent()">+ انتشار محتوا</button>
+    <button class="bv-btn bv-primary" onclick="BVAdmin.addContent()">+ انتشار</button>
     <div id="bvContentList" style="margin-top:18px"></div>
   </div>
 </div>
@@ -625,13 +657,17 @@ window.BVAdmin = (() => {
   function status(msg,ok=true){const e=$('bvAdminStatus');e.style.display='block';e.textContent=msg;e.style.border=ok?'1px solid #00eaff55':'1px solid #ff668855';}
   async function isAdmin(){const {data,error}=await supabaseClient.rpc('is_current_user_admin');return !error&&data===true;}
   async function isSuperAdmin(){const {data,error}=await supabaseClient.rpc('is_current_user_super_admin');return !error&&data===true;}
-  async function refreshButton(){if(await isAdmin())$('bvAdminBtn').style.display='block';else $('bvAdminBtn').style.display='none';}
+  async function refreshButton(){
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    if(!session){$('bvAdminBtn').style.display='none';return;}
+    $('bvAdminBtn').style.display=(await isAdmin())?'block':'none';
+  }
   async function open(){if(!(await isAdmin())){alert('دسترسی ادمین ندارید.');return;}$('bvAdminOverlay').style.display='block';const sa=await isSuperAdmin();$('bvAdminEmail').parentElement.parentElement.style.display=sa?'flex':'none';await Promise.all([loadAdmins(),loadContents()]);}
   function close(){$('bvAdminOverlay').style.display='none'}
   async function loadAdmins(){const {data,error}=await supabaseClient.rpc('list_admins');if(error){status(error.message,false);return;}const sa=await isSuperAdmin();$('bvAdminList').innerHTML=(data||[]).map(a=>`<div class="bv-item"><div class="bv-flex"><div><b>${escapeHtml(a.email)}</b><br><small>${a.id}</small></div>${sa?`<button class="bv-btn bv-danger" onclick="BVAdmin.removeAdmin('${a.email}')">حذف ادمین</button>`:''}</div></div>`).join('')||'<p>ادمینی ثبت نشده است.</p>';}
   async function addAdmin(){if(!(await isSuperAdmin()))return status('فقط ادمین اصلی اجازه مدیریت ادمین‌ها را دارد.',false);const email=$('bvAdminEmail').value.trim();if(!email)return alert('ایمیل را وارد کن.');const {error}=await supabaseClient.rpc('set_admin_by_email',{p_email:email});if(error){status(error.message,false);return;}status('ادمین با موفقیت اضافه شد.');$('bvAdminEmail').value='';await loadAdmins();}
   async function removeAdmin(email){if(!(await isSuperAdmin()))return status('فقط ادمین اصلی اجازه مدیریت ادمین‌ها را دارد.',false);if(!confirm('این کاربر از لیست ادمین‌ها حذف شود؟'))return;const {error}=await supabaseClient.rpc('remove_admin_by_email',{p_email:email});if(error){status(error.message,false);return;}status('دسترسی ادمین حذف شد.');await loadAdmins();}
-  function previewImage(event){const files=Array.from(event.target.files||[]),box=$('bvImagePreview'),count=$('bvImageCount');box.innerHTML='';if(!files.length){count.textContent='می‌توانی چند تصویر انتخاب کنی.';return;}for(const file of files){if(!file.type.startsWith('image/')){event.target.value='';box.innerHTML='';alert('لطفاً فقط فایل تصویری انتخاب کن.');return;}if(file.size>MAX_IMAGE){event.target.value='';box.innerHTML='';alert(`حجم «${file.name}» بیشتر از 8MB است.`);return;}const w=document.createElement('div');w.className='bv-upload-thumb';w.innerHTML=`<img src="${URL.createObjectURL(file)}" alt="preview"><div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(file.name)}</div>`;box.appendChild(w);}count.textContent=`${files.length} تصویر انتخاب شده است.`;}
+  function previewImage(event){const files=Array.from(event.target.files||[]),box=$('bvImagePreview'),count=$('bvImageCount');box.innerHTML='';if(!files.length){count.textContent='چند تصویر';return;}for(const file of files){if(!file.type.startsWith('image/')){event.target.value='';box.innerHTML='';alert('لطفاً فقط فایل تصویری انتخاب کن.');return;}if(file.size>MAX_IMAGE){event.target.value='';box.innerHTML='';alert(`حجم «${file.name}» بیشتر از 8MB است.`);return;}const w=document.createElement('div');w.className='bv-upload-thumb';w.innerHTML=`<img src="${URL.createObjectURL(file)}" alt="preview"><div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(file.name)}</div>`;box.appendChild(w);}count.textContent=`${files.length} تصویر`;}
   function previewAttachments(event){const files=Array.from(event.target.files||[]),box=$('bvAttachmentPreview'),count=$('bvAttachmentCount');box.innerHTML='';for(const file of files){const ext=(file.name.split('.').pop()||'').toLowerCase();if(!allowed.includes(ext)){event.target.value='';box.innerHTML='';alert('فقط PDF، Word و PowerPoint مجاز است.');return;}if(file.size>MAX_FILE){event.target.value='';box.innerHTML='';alert(`حجم «${file.name}» بیشتر از 20MB است.`);return;}const w=document.createElement('div');w.className='bv-upload-thumb';w.innerHTML=`<div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📎 ${escapeHtml(file.name)}</div>`;box.appendChild(w);}count.textContent=files.length?`${files.length} فایل انتخاب شده است.`:'PDF، Word و PowerPoint؛ هر فایل حداکثر 20MB.';}
   async function uploadImage(file){const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';const path=`content/${Date.now()}-${crypto.randomUUID()}.${ext}`;const b=supabaseClient.storage.from('biovibe-images');const {error}=await b.upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(error)throw new Error(`خطا در آپلود «${file.name}»: ${error.message}`);return b.getPublicUrl(path).data.publicUrl;}
   async function uploadAttachment(file){const ext=(file.name.split('.').pop()||'bin').toLowerCase();const path=`content-files/${Date.now()}-${crypto.randomUUID()}.${ext}`;const b=supabaseClient.storage.from('biovibe-files');const {error}=await b.upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||'application/octet-stream'});if(error)throw new Error(`خطا در آپلود فایل «${file.name}»: ${error.message}`);return {name:file.name,url:b.getPublicUrl(path).data.publicUrl};}
