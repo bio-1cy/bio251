@@ -240,6 +240,14 @@
     .page{display:none;min-height:100vh;padding:140px 10%;text-align:center;}
     .content-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;margin:20px auto;max-width:600px;text-align:right;border:1px solid rgba(255,143,200,.12);box-shadow:0 0 20px rgba(255,143,200,.04);}
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
+
+    .bv-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+    .bv-gallery img{width:100%;height:190px;object-fit:cover;border-radius:14px;border:1px solid #00eaff33;display:block;background:#071b1f}
+    .bv-upload-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:10px}
+    .bv-upload-thumb{position:relative}
+    .bv-upload-thumb img{width:100%;height:120px;object-fit:cover;border-radius:12px;border:1px solid #00eaff55}
+    .bv-upload-count{margin-top:7px;font-size:12px;color:#c5dde0}
+
 </style>
 
 <style id="biovibe-admin-css">
@@ -282,7 +290,7 @@
         <div class="loginTitle" id="authTitle">BioVibe</div>
         
         <label class="fieldLabel" for="user">نام کاربری</label>
-        <input id="user" placeholder="نام کاربری" autocomplete="username">
+        <input id="user" placeholder="نام کاربری یا ایمیل" autocomplete="username">
 
         <label class="fieldLabel" for="pass">رمز عبور</label>
         <input id="pass" type="password" placeholder="رمز عبور" autocomplete="current-password">
@@ -403,19 +411,22 @@
             btn.disabled = true;
             btn.innerText = "در حال ورود...";
 
-            // Securely resolve username -> email through a Supabase RPC.
-            const { data: email, error: profileError } = await supabaseClient
-                .rpc("get_login_email", { p_username: u });
-
-            if (profileError || !email) {
-                btn.disabled = false;
-                btn.innerText = "ورود";
-                alert("نام کاربری یا رمز عبور اشتباه است.");
-                return;
+            // ورود با ایمیل یا نام کاربری
+            let loginEmail = u;
+            if (!u.includes('@')) {
+                const { data: resolvedEmail, error: resolveError } = await supabaseClient
+                    .rpc("get_login_email", { p_username: u });
+                if (resolveError || !resolvedEmail) {
+                    btn.disabled = false;
+                    btn.innerText = "ورود";
+                    alert("نام کاربری پیدا نشد. نام کاربری یا ایمیل را دقیق وارد کنید.");
+                    return;
+                }
+                loginEmail = resolvedEmail;
             }
 
             const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
+                email: loginEmail,
                 password: p
             });
 
@@ -423,7 +434,10 @@
             btn.innerText = "ورود";
 
             if (error) {
-                alert("نام کاربری یا رمز عبور اشتباه است.");
+                const msg = /not confirmed|email not confirmed/i.test(error.message)
+                    ? "ایمیل این حساب هنوز تأیید نشده است. ابتدا ایمیل تأیید Supabase را تأیید کنید."
+                    : "ورود ناموفق بود: " + error.message;
+                alert(msg);
                 return;
             }
 
@@ -515,15 +529,36 @@
     }
 
     async function loadContent(){
+        const nCont = document.getElementById("news-container");
+        const jCont = document.getElementById("journal-container");
         try {
-            const res = await fetch("biovibe-data.json");
-            const data = await res.json();
-            const nCont = document.getElementById("news-container");
-            const jCont = document.getElementById("journal-container");
-            if(data.news) data.news.forEach(item => nCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
-            if(data.journal) data.journal.forEach(item => jCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
-        } catch (e) { console.log("JSON Load Error"); }
+            const {data, error} = await supabaseClient.from("contents").select("*").order("created_at", {ascending:false});
+            if(error) throw error;
+            const render = (items) => items.map(item => {
+                let urls = [];
+                try { urls = Array.isArray(item.image_urls) ? item.image_urls : (item.image_url ? [item.image_url] : []); } catch (_) {}
+                const images = urls.length
+                    ? `<div class="bv-gallery">${urls.map(u => `<img src="${escapeCms(u)}" alt="" loading="lazy">`).join("")}</div>`
+                    : "";
+                const link = item.link_url ? `<p><a href="${escapeCms(item.link_url)}" target="_blank" rel="noopener">مشاهده مطلب ↗</a></p>` : "";
+                return `<div class="content-card"><h3>${escapeCms(item.title)}</h3>${images}<p>${escapeCms(item.description || "")}</p>${link}</div>`;
+            }).join("");
+            const news = (data || []).filter(x => x.section === "Bio-News");
+            const journal = (data || []).filter(x => x.section === "Bio-Journal Club");
+            nCont.innerHTML = render(news);
+            jCont.innerHTML = render(journal);
+            return;
+        } catch (e) {
+            console.log("Supabase content load error", e);
+            try {
+                const res = await fetch("biovibe-data.json");
+                const data = await res.json();
+                if(data.news) nCont.innerHTML = data.news.map(item => `<div class="content-card"><h3>${escapeCms(item.title)}</h3><p>${escapeCms(item.text || "")}</p></div>`).join("");
+                if(data.journal) jCont.innerHTML = data.journal.map(item => `<div class="content-card"><h3>${escapeCms(item.title)}</h3><p>${escapeCms(item.text || "")}</p></div>`).join("");
+            } catch (_) {}
+        }
     }
+    function escapeCms(s){ return String(s).replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
     async function restoreSession() {
         const { data } = await supabaseClient.auth.getSession();
 
@@ -557,8 +592,8 @@
     <div class="bv-flex"><h2>⚙️ پنل مدیریت BioVibe</h2><button class="bv-btn bv-muted" onclick="BVAdmin.close()">بستن</button></div>
     <div id="bvAdminStatus" class="bv-status"></div>
     <h3>👥 مدیریت ادمین‌ها</h3>
-    <p>ایمیل کاربری که قبلاً در سایت ثبت‌نام کرده را وارد کن تا ادمین شود.</p>
-    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="admin@example.com"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن ادمین</button></div>
+    <p>ایمیل ادمین جدید</p>
+    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="ایمیل ادمین جدید"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن ادمین</button></div>
     <div id="bvAdminList"></div>
     <hr style="border-color:#00eaff22;margin:24px 0">
     <h3>📝 افزودن محتوا</h3>
@@ -567,8 +602,9 @@
     <div class="bv-row" style="margin-top:10px">
       <div class="bv-half">
         <label style="display:block;margin-bottom:7px">🖼️ تصویر</label>
-        <input id="bvImageFile" type="file" accept="image/*" onchange="BVAdmin.previewImage(event)">
-        <div id="bvImagePreview" style="margin-top:10px"></div>
+        <input id="bvImageFile" type="file" accept="image/*" multiple onchange="BVAdmin.previewImage(event)">
+        <div class="bv-upload-count" id="bvImageCount">می‌توانی چند تصویر انتخاب کنی.</div>
+        <div id="bvImagePreview" class="bv-upload-list"></div>
       </div>
       <div class="bv-half"><input id="bvLinkUrl" placeholder="لینک مطلب"></div>
     </div>
@@ -589,43 +625,75 @@ window.BVAdmin = (() => {
   async function addAdmin(){ const email=$('bvAdminEmail').value.trim(); if(!email)return alert('ایمیل را وارد کن.'); const {data,error}=await supabaseClient.rpc('set_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('ادمین با موفقیت اضافه شد.'); $('bvAdminEmail').value=''; await loadAdmins(); }
   async function removeAdmin(email){ if(!confirm('این کاربر از لیست ادمین‌ها حذف شود؟'))return; const {error}=await supabaseClient.rpc('remove_admin_by_email',{p_email:email}); if(error){status(error.message,false);return;} status('دسترسی ادمین حذف شد.'); await loadAdmins(); }
   function previewImage(event){
-    const file=event.target.files && event.target.files[0];
+    const files=Array.from(event.target.files||[]);
     const box=$('bvImagePreview');
-    if(!file){box.innerHTML='';return;}
-    if(!file.type.startsWith('image/')){box.innerHTML='';alert('لطفاً یک فایل تصویری انتخاب کن.');event.target.value='';return;}
-    if(file.size>8*1024*1024){box.innerHTML='';alert('حجم تصویر نباید بیشتر از 8MB باشد.');event.target.value='';return;}
-    const url=URL.createObjectURL(file);
-    box.innerHTML=`<img src="${url}" style="max-width:220px;max-height:160px;border-radius:12px;border:1px solid #00eaff55;object-fit:cover" alt="preview">`;
+    const count=$('bvImageCount');
+    box.innerHTML='';
+    if(!files.length){count.textContent='می‌توانی چند تصویر انتخاب کنی.';return;}
+    for(const file of files){
+      if(!file.type.startsWith('image/')){
+        box.innerHTML=''; event.target.value=''; count.textContent=''; alert('لطفاً فقط فایل‌های تصویری انتخاب کن.'); return;
+      }
+      if(file.size>8*1024*1024){
+        box.innerHTML=''; event.target.value=''; count.textContent=''; alert(`حجم «${file.name}» بیشتر از 8MB است.`); return;
+      }
+      const url=URL.createObjectURL(file);
+      const wrap=document.createElement('div');
+      wrap.className='bv-upload-thumb';
+      wrap.innerHTML=`<img src="${url}" alt="preview"><div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(file.name)}</div>`;
+      box.appendChild(wrap);
+    }
+    count.textContent=`${files.length} تصویر انتخاب شده است.`;
   }
   async function uploadImage(file){
     const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
     const path=`content/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-    const {error}=await supabaseClient.storage.from('images').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
-    if(error) throw error;
-    const {data}=supabaseClient.storage.from('images').getPublicUrl(path);
+    const bucket=supabaseClient.storage.from('biovibe-images');
+    const {error}=await bucket.upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
+    if(error) throw new Error(`خطا در آپلود «${file.name}»: ${error.message}`);
+    const {data}=bucket.getPublicUrl(path);
+    if(!data || !data.publicUrl) throw new Error(`لینک عمومی برای «${file.name}» ساخته نشد.`);
     return data.publicUrl;
   }
   async function addContent(){
     const title=$('bvTitle').value.trim();
     if(!title)return alert('عنوان را وارد کن.');
-    const file=$('bvImageFile').files && $('bvImageFile').files[0];
+    const files=Array.from($('bvImageFile').files||[]);
     try{
-      status(file?'در حال آپلود تصویر...':'در حال انتشار...');
-      let image_url=null;
-      if(file) image_url=await uploadImage(file);
-      const payload={section:$('bvSection').value,title,description:$('bvDescription').value.trim(),image_url,link_url:$('bvLinkUrl').value.trim()||null};
+      status(files.length?`در حال آپلود ${files.length} تصویر...`:'در حال انتشار...');
+      const image_urls=[];
+      for(const file of files) image_urls.push(await uploadImage(file));
+      const payload={
+        section:$('bvSection').value,
+        title,
+        description:$('bvDescription').value.trim(),
+        image_url:image_urls[0]||null,
+        image_urls:image_urls,
+        link_url:$('bvLinkUrl').value.trim()||null
+      };
       const {error}=await supabaseClient.from('contents').insert(payload);
-      if(error) throw error;
-      status('محتوا و تصویر با موفقیت منتشر شد.');
-      $('bvTitle').value='';$('bvDescription').value='';$('bvLinkUrl').value='';$('bvImageFile').value='';$('bvImagePreview').innerHTML='';
+      if(error) throw new Error(`محتوا ذخیره نشد: ${error.message}`);
+      status(`محتوا با ${image_urls.length} تصویر با موفقیت منتشر شد.`);
+      $('bvTitle').value='';$('bvDescription').value='';$('bvLinkUrl').value='';
+      $('bvImageFile').value='';$('bvImagePreview').innerHTML='';$('bvImageCount').textContent='می‌توانی چند تصویر انتخاب کنی.';
       await loadContents();
+      if(typeof loadContent==='function') await loadContent();
     }catch(e){status(e.message||'خطا در انتشار محتوا',false);}
   }
-  async function loadContents(){ const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50); if(error){$('bvContentList').innerHTML='';return;} $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+data.map(x=>`<div class="bv-item"><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}</small><p>${escapeHtml(x.description||'')}</p></div>`).join(''); }
+  async function loadContents(){
+    const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(50);
+    if(error){$('bvContentList').innerHTML='<p>'+escapeHtml(error.message)+'</p>';return;}
+    $('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+((data||[]).map(x=>{
+      let urls=[]; try{urls=Array.isArray(x.image_urls)?x.image_urls:(x.image_url?[x.image_url]:[])}catch(_){}
+      const thumbs=urls.length?`<div class="bv-upload-list">${urls.slice(0,6).map(u=>`<img src="${escapeHtml(u)}" style="width:100%;height:90px;object-fit:cover;border-radius:10px">`).join('')}</div>`:'';
+      return `<div class="bv-item"><div class="bv-flex"><div style="flex:1"><b>${escapeHtml(x.title)}</b><br><small>${escapeHtml(x.section)}${urls.length?` · ${urls.length} تصویر`:''}</small>${thumbs}<p>${escapeHtml(x.description||'')}</p></div><button class="bv-btn bv-danger" onclick="BVAdmin.deleteContent('${x.id}')">حذف</button></div></div>`;
+    }).join('') || '<p>هنوز محتوایی ثبت نشده است.</p>');
+  }
+  async function deleteContent(id){ if(!confirm('این محتوا حذف شود؟')) return; const {error}=await supabaseClient.from('contents').delete().eq('id',id); if(error){status(error.message,false);return;} status('محتوا حذف شد.'); await loadContents(); if(typeof loadContent==='function') await loadContent(); }
   function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
   supabaseClient.auth.onAuthStateChange(()=>setTimeout(refreshButton,100));
   setTimeout(refreshButton,500);
-  return {open,close,addAdmin,removeAdmin,addContent,previewImage};
+  return {open,close,addAdmin,removeAdmin,addContent,deleteContent,previewImage};
 })();
 </script>
 </body>
