@@ -641,9 +641,9 @@
             containers.company.innerHTML=render(bySection('Bio-Company'));
             containers.talk.innerHTML=render(bySection('Bio-Talk'));
 
-            const cutoff=Date.now()-6*60*60*1000;
+            const cutoff=Date.now()-14*60*60*1000;
             const recent=rows.filter(x=>{const t=Date.parse(x.created_at||'');return Number.isFinite(t)&&t>=cutoff;});
-            containers.recent.innerHTML=recent.length?recent.map(x=>renderItem(x,true)).join(''):'<div class="bv-empty">محتوای جدیدی در ۶ ساعت اخیر ثبت نشده است.</div>';
+            containers.recent.innerHTML=recent.length?recent.map(x=>renderItem(x,true)).join(''):'<div class="bv-empty">محتوای جدیدی در ۱۴ ساعت اخیر ثبت نشده است.</div>';
         }catch(e){
             console.error('Supabase content load error',e);
             Object.values(containers).forEach(el=>{if(el)el.innerHTML='<div class="bv-empty">خطا در بارگذاری محتوا.</div>';});
