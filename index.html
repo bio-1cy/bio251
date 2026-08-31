@@ -240,40 +240,6 @@
     .page{display:none;min-height:100vh;padding:140px 10%;text-align:center;}
     .content-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;margin:20px auto;max-width:600px;text-align:right;border:1px solid rgba(255,143,200,.12);box-shadow:0 0 20px rgba(255,143,200,.04);}
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
-
-    .bv-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
-    .bv-gallery img{width:100%;height:190px;object-fit:cover;border-radius:14px;border:1px solid #00eaff33;display:block;background:#071b1f}
-    .bv-gallery img,.bv-home-gallery img{cursor:zoom-in;transition:transform .2s ease,box-shadow .2s ease}
-    .bv-gallery img:hover,.bv-home-gallery img:hover{transform:scale(1.02);box-shadow:0 8px 28px rgba(0,0,0,.35)}
-    .bv-home-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;max-width:1100px;margin:20px auto;padding:0 20px}
-    .bv-home-gallery img{width:100%;height:220px;object-fit:cover;border-radius:16px;border:1px solid #00eaff33;background:#071b1f}
-    .bv-recent-home{max-width:1100px;margin:32px auto 20px;padding:0 20px;text-align:center}
-    .bv-recent-home h2{margin-bottom:12px}
-    .bv-recent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-    .bv-recent-grid .content-card{max-width:none;margin:0}
-    .bv-recent-meta{font-size:11px;color:#a9c7ca;margin-top:8px}
-    .bv-empty{opacity:.65;padding:18px}
-    #bvLightbox{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;padding:30px;cursor:zoom-out}
-    #bvLightboxImg{max-width:95vw;max-height:90vh;width:auto;height:auto;object-fit:contain;border-radius:10px;box-shadow:0 0 50px rgba(0,234,255,.15);cursor:default}
-    #bvLightboxClose{position:absolute;top:18px;right:22px;width:44px;height:44px;border:0;border-radius:50%;font-size:30px;line-height:1;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;z-index:2}
-
-    .bv-upload-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:10px}
-    .bv-upload-thumb{position:relative}
-    .bv-upload-thumb img{width:100%;height:120px;object-fit:cover;border-radius:12px;border:1px solid #00eaff55}
-    .bv-upload-count{margin-top:7px;font-size:12px;color:#c5dde0}
-
-.bv-attachments{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:12px;border:1px solid #00eaff22;border-radius:12px;background:rgba(0,234,255,.03)}
-.bv-attachments b{margin-bottom:2px}.bv-attachments a{display:block;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.04);text-decoration:none}
-</style>
-
-<style id="biovibe-admin-css">
-#bvAdminBtn{position:fixed;bottom:22px;left:22px;z-index:9998;display:none;border:0;border-radius:999px;padding:12px 18px;background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#071b1f;font-weight:800;cursor:pointer;box-shadow:0 8px 30px #0008}
-#bvAdminOverlay{position:fixed;inset:0;background:#02090be8;z-index:9999;display:none;overflow:auto;padding:30px;box-sizing:border-box}
-#bvAdminPanel{max-width:980px;margin:20px auto;background:#071b1f;border:1px solid #00eaff66;border-radius:24px;padding:24px;box-shadow:0 20px 80px #000a;color:#fff;font-family:Tahoma,Arial,sans-serif}
-#bvAdminPanel h2{margin-top:0;color:#74f2e7}#bvAdminPanel .bv-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-#bvAdminPanel input,#bvAdminPanel select,#bvAdminPanel textarea{box-sizing:border-box;width:100%;padding:12px;border-radius:12px;border:1px solid #00eaff55;background:#031316;color:#fff}
-#bvAdminPanel .bv-half{flex:1;min-width:220px}.bv-btn{border:0;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:700}.bv-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#061417}.bv-danger{background:#7d2335;color:#fff}.bv-muted{background:#16343a;color:#fff}
-.bv-item{border:1px solid #00eaff33;border-radius:15px;padding:14px;margin:10px 0;background:#06171a}.bv-item small{opacity:.7}.bv-flex{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.bv-status{margin:10px 0;padding:10px;border-radius:10px;background:#0d2a30;display:none}
 </style>
 </head>
 
@@ -336,7 +302,6 @@
         <a onclick="openPage('company')">Bio‑Company</a>
         <a onclick="openPage('news')">Bio‑News</a>
         <a onclick="openPage('journal')">Bio‑Journal Club</a>
-        <a onclick="openPage('talk')">Bio‑Talk</a>
     </div>
 
     <section id="heroSection" class="hero">
@@ -345,11 +310,6 @@
             <div class="rung" style="--i:1"></div><div class="rung" style="--i:2"></div><div class="rung" style="--i:3"></div><div class="rung" style="--i:4"></div><div class="rung" style="--i:5"></div><div class="rung" style="--i:6"></div><div class="rung" style="--i:7"></div><div class="rung" style="--i:8"></div><div class="rung" style="--i:9"></div><div class="rung" style="--i:10"></div>
         </div>
         <div class="hero-content"><h1>BIOVIBE</h1><p>انجمن علمی زیست شناسی</p></div>
-    </section>
-
-    <section id="bvRecentHome" class="bv-recent-home">
-        <h2>تازه‌ها</h2>
-        <div id="recent-home-container" class="bv-recent-grid"></div>
     </section>
 
     <section id="news" class="page">
@@ -364,10 +324,9 @@
         <button class="backBtn" onclick="closePages()">بازگشت</button>
     </section>
 
-    <section id="lab" class="page"><h2>Bio‑Lab</h2><div id="lab-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="media" class="page"><h2>Bio‑Media</h2><div id="media-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="company" class="page"><h2>Bio‑Company</h2><div id="company-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="talk" class="page"><h2>Bio‑Talk</h2><div id="talk-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="lab" class="page"><h2>Bio‑Lab</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="media" class="page"><h2>Bio‑Media</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="company" class="page"><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button></section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -530,126 +489,31 @@
         }
     }
 
-    async function logout(){
-        const btn=document.querySelector('.logout-btn');
-        if(btn) btn.disabled=true;
-        try {
-            const { error } = await supabaseClient.auth.signOut({ scope: 'local' });
-            if (error) throw error;
-
-            // Make sure no stale local session can restore the site.
-            try {
-                const { data } = await supabaseClient.auth.getSession();
-                if (data && data.session) {
-                    await supabaseClient.auth.signOut({ scope: 'local' });
-                }
-            } catch (_) {}
-
-            // Supabase v2 stores the auth session under this project key.
-            try { localStorage.removeItem('sb-ltqdnzvxqtblsfwgpzbe-auth-token'); } catch (_) {}
-
-            document.getElementById('bvAdminOverlay')?.style && (document.getElementById('bvAdminOverlay').style.display='none');
-            const adminBtn=document.getElementById('bvAdminBtn'); if(adminBtn) adminBtn.style.display='none';
-            document.getElementById('mainSite').style.display='none';
-            document.getElementById('loginPage').style.display='flex';
-            document.getElementById('pass').value='';
-            switchMode('login');
-
-            // Reload so restoreSession cannot reopen the authenticated UI.
-            window.location.replace(window.location.href.split('#')[0]);
-        } catch (e) {
-            console.error("Logout error", e);
-            alert("خروج انجام نشد. دوباره تلاش کنید.");
-            if(btn) btn.disabled=false;
-        }
-    }
+    function logout(){ location.reload(); }
     function toggleMenu(){ sideMenu.classList.toggle("active") }
 
     function openPage(id){
         document.getElementById("heroSection").style.display="none";
-        document.getElementById("bvRecentHome").style.display="none";
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
-        const page=document.getElementById(id);
-        if(page) page.style.display="block";
+        document.getElementById(id).style.display="block";
         sideMenu.classList.remove("active");
     }
 
     function closePages(){
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
         document.getElementById("heroSection").style.display="flex";
-        const recent=document.getElementById("bvRecentHome"); if(recent) recent.style.display="block";
     }
 
-    function openLightbox(url){
-        const lb=document.getElementById('bvLightbox'), img=document.getElementById('bvLightboxImg');
-        if(!lb||!img||!url)return; img.src=url; img.alt='تصویر کامل'; lb.style.display='flex'; document.body.style.overflow='hidden';
-    }
-    function closeLightbox(e){
-        if(e && e.target && e.target.id==='bvLightboxImg') return;
-        const lb=document.getElementById('bvLightbox'); if(lb) lb.style.display='none';
-        const img=document.getElementById('bvLightboxImg'); if(img) img.src='';
-        document.body.style.overflow='';
-    }
-    document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
-    window.openLightbox=openLightbox; window.closeLightbox=closeLightbox;
-
-    function normalizeList(value){
-        if(Array.isArray(value)) return value;
-        if(value==null || value==='') return [];
-        if(typeof value==='string'){ try{ const parsed=JSON.parse(value); return Array.isArray(parsed)?parsed:[value]; }catch(_){ return [value]; } }
-        return [];
-    }
-    function getImageUrls(item){
-        let urls=normalizeList(item.image_urls);
-        if(!urls.length && item.image_url) urls=[item.image_url];
-        return urls.map(v=>typeof v==='string'?v:(v&&v.url)||'').filter(Boolean);
-    }
-    function getAttachments(item){
-        return normalizeList(item.attachment_urls).map(v=>{
-            if(typeof v==='string') return {name:'دریافت فایل',url:v};
-            return {name:v&&v.name?v.name:'دریافت فایل',url:v&&v.url?v.url:''};
-        }).filter(x=>x.url);
-    }
-    function renderImages(urls){
-        return urls.length ? `<div class="bv-gallery">${urls.map(u=>`<img src="${escapeCms(u)}" alt="تصویر" loading="lazy" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`).join('')}</div>` : '';
-    }
-    function renderItem(item, includeTime=false){
-        const urls=getImageUrls(item);
-        const files=getAttachments(item);
-        const attachments=files.length?`<div class="bv-attachments"><b>📎 فایل‌های مرتبط</b>${files.map(f=>`<a href="${escapeCms(f.url)}" target="_blank" rel="noopener">⬇️ ${escapeCms(f.name)}</a>`).join('')}</div>`:'';
-        const link=item.link_url?`<p><a href="${escapeCms(item.link_url)}" target="_blank" rel="noopener">مشاهده مطلب ↗</a></p>`:'';
-        const meta=includeTime && item.created_at ? `<div class="bv-recent-meta">تازه منتشر شده</div>`:'';
-        return `<div class="content-card"><h3>${escapeCms(item.title||'بدون عنوان')}</h3>${renderImages(urls)}<p>${escapeCms(item.description||'')}</p>${attachments}${link}${meta}</div>`;
-    }
     async function loadContent(){
-        const containers={
-            news:document.getElementById('news-container'), journal:document.getElementById('journal-container'),
-            lab:document.getElementById('lab-container'), media:document.getElementById('media-container'),
-            company:document.getElementById('company-container'), talk:document.getElementById('talk-container'),
-            recent:document.getElementById('recent-home-container')
-        };
-        try{
-            const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(200);
-            if(error) throw error;
-            const rows=data||[];
-            const bySection=name=>rows.filter(x=>x.section===name);
-            const render=items=>items.length?items.map(x=>renderItem(x)).join(''):'<div class="bv-empty">هنوز محتوایی ثبت نشده است.</div>';
-            containers.news.innerHTML=render(bySection('Bio-News'));
-            containers.journal.innerHTML=render(bySection('Bio-Journal Club'));
-            containers.lab.innerHTML=render(bySection('Bio-Lab'));
-            containers.media.innerHTML=render(bySection('Bio-Media'));
-            containers.company.innerHTML=render(bySection('Bio-Company'));
-            containers.talk.innerHTML=render(bySection('Bio-Talk'));
-
-            const cutoff=Date.now()-14*60*60*1000;
-            const recent=rows.filter(x=>{const t=Date.parse(x.created_at||'');return Number.isFinite(t)&&t>=cutoff;});
-            containers.recent.innerHTML=recent.length?recent.map(x=>renderItem(x,true)).join(''):'<div class="bv-empty">محتوای جدیدی در ۱۴ ساعت اخیر ثبت نشده است.</div>';
-        }catch(e){
-            console.error('Supabase content load error',e);
-            Object.values(containers).forEach(el=>{if(el)el.innerHTML='<div class="bv-empty">خطا در بارگذاری محتوا.</div>';});
-        }
+        try {
+            const res = await fetch("biovibe-data.json");
+            const data = await res.json();
+            const nCont = document.getElementById("news-container");
+            const jCont = document.getElementById("journal-container");
+            if(data.news) data.news.forEach(item => nCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
+            if(data.journal) data.journal.forEach(item => jCont.innerHTML += `<div class="content-card"><h3>${item.title}</h3><p>${item.text}</p></div>`);
+        } catch (e) { console.log("JSON Load Error"); }
     }
-    function escapeCms(s){ return String(s).replace(/[&<>\"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
     async function restoreSession() {
         const { data } = await supabaseClient.auth.getSession();
 
@@ -659,106 +523,22 @@
         } else {
             document.getElementById('loginPage').style.display = "flex";
             document.getElementById('mainSite').style.display = "none";
-            const adminBtn = document.getElementById('bvAdminBtn');
-            if (adminBtn) adminBtn.style.display = 'none';
-        }
-        if (window.BVAdmin && typeof BVAdmin.refreshButton === 'function') {
-            await BVAdmin.refreshButton();
         }
     }
 
     supabaseClient.auth.onAuthStateChange((event, session) => {
-        setTimeout(async () => {
-            if (event === "SIGNED_IN" && session) {
-                document.getElementById('loginPage').style.display = "none";
-                document.getElementById('mainSite').style.display = "block";
-                if (window.BVAdmin && typeof BVAdmin.refreshButton === 'function') await BVAdmin.refreshButton();
-            }
-            if (event === "SIGNED_OUT") {
-                document.getElementById('loginPage').style.display = "flex";
-                document.getElementById('mainSite').style.display = "none";
-                const adminBtn = document.getElementById('bvAdminBtn');
-                if (adminBtn) adminBtn.style.display = 'none';
-                const overlay=document.getElementById('bvAdminOverlay');
-                if(overlay) overlay.style.display='none';
-            }
-        }, 0);
+        if (event === "SIGNED_IN" && session) {
+            document.getElementById('loginPage').style.display = "none";
+            document.getElementById('mainSite').style.display = "block";
+        }
+        if (event === "SIGNED_OUT") {
+            document.getElementById('loginPage').style.display = "flex";
+            document.getElementById('mainSite').style.display = "none";
+        }
     });
 
     restoreSession();
     loadContent();
-</script>
-
-<div id="bvLightbox" onclick="closeLightbox(event)"><button id="bvLightboxClose" onclick="closeLightbox(event)">×</button><img id="bvLightboxImg" alt="تصویر کامل"></div>
-<button id="bvAdminBtn" onclick="BVAdmin.open()">⚙️ پنل مدیریت</button>
-<div id="bvAdminOverlay">
-  <div id="bvAdminPanel">
-    <div class="bv-flex"><h2>⚙️ پنل مدیریت BioVibe</h2><button class="bv-btn bv-muted" onclick="BVAdmin.close()">بستن</button></div>
-    <div id="bvAdminStatus" class="bv-status"></div>
-    <h3>👥 ادمین‌ها</h3>
-    
-    <div class="bv-row"><div class="bv-half"><input id="bvAdminEmail" type="email" placeholder="ادمین جدید"></div><button class="bv-btn bv-primary" onclick="BVAdmin.addAdmin()">+ افزودن</button></div>
-    <div id="bvAdminList"></div>
-    <hr style="border-color:#00eaff22;margin:24px 0">
-    <h3>📝 محتوا</h3>
-    <div class="bv-row"><div class="bv-half"><select id="bvSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Media</option><option>Bio-Lab</option><option>Bio-Company</option><option>Bio-Talk</option></select></div><div class="bv-half"><input id="bvTitle" placeholder="عنوان"></div></div>
-    <textarea id="bvDescription" rows="6" placeholder="متن محتوا"></textarea>
-    <div class="bv-row" style="margin-top:10px">
-      <div class="bv-half">
-        <label style="display:block;margin-bottom:7px">🖼️ تصاویر</label>
-        <input id="bvImageFile" type="file" accept="image/*" multiple onchange="BVAdmin.previewImage(event)">
-        <div class="bv-upload-count" id="bvImageCount">چند تصویر</div>
-        <div id="bvImagePreview" class="bv-upload-list"></div>
-        <label style="display:block;margin:14px 0 7px">📎 فایل‌های ضمیمه</label>
-        <input id="bvAttachmentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx" onchange="BVAdmin.previewAttachments(event)">
-        <div class="bv-upload-count" id="bvAttachmentCount">PDF، Word و PowerPoint؛ هر فایل حداکثر 20MB.</div>
-        <div id="bvAttachmentPreview" class="bv-upload-list"></div>
-      </div>
-      <div class="bv-half"><input id="bvLinkUrl" placeholder="لینک"></div>
-    </div>
-    <button class="bv-btn bv-primary" onclick="BVAdmin.addContent()">+ انتشار</button>
-    <div id="bvContentList" style="margin-top:18px"></div>
-  </div>
-</div>
-
-<script id="biovibe-admin-js">
-window.BVAdmin = (() => {
-  const $=id=>document.getElementById(id), MAX_IMAGE=8*1024*1024, MAX_FILE=20*1024*1024;
-  const allowed=['pdf','doc','docx','ppt','pptx'];
-  function status(msg,ok=true){const e=$('bvAdminStatus');e.style.display='block';e.textContent=msg;e.style.border=ok?'1px solid #00eaff55':'1px solid #ff668855';}
-  async function isAdmin(){const {data,error}=await supabaseClient.rpc('is_current_user_admin');return !error&&data===true;}
-  async function isSuperAdmin(){const {data,error}=await supabaseClient.rpc('is_current_user_super_admin');return !error&&data===true;}
-  async function refreshButton(){
-    const {data:{session}}=await supabaseClient.auth.getSession();
-    if(!session){$('bvAdminBtn').style.display='none';return;}
-    $('bvAdminBtn').style.display=(await isAdmin())?'block':'none';
-  }
-  async function open(){
-    if(!(await isAdmin())){alert('دسترسی ادمین ندارید.');return;}
-    $('bvAdminOverlay').style.display='block';
-    const sa=await isSuperAdmin();
-    const adminRow=$('bvAdminEmail').parentElement.parentElement;
-    const adminHeading=adminRow.previousElementSibling;
-    const adminList=$('bvAdminList');
-    if(adminRow) adminRow.style.display=sa?'flex':'none';
-    if(adminHeading) adminHeading.style.display=sa?'block':'none';
-    if(adminList) adminList.style.display=sa?'block':'none';
-    await Promise.all([sa?loadAdmins():Promise.resolve(),loadContents()]);
-  }
-  function close(){$('bvAdminOverlay').style.display='none'}
-  async function loadAdmins(){const {data,error}=await supabaseClient.rpc('list_admins');if(error){status(error.message,false);return;}const sa=await isSuperAdmin();$('bvAdminList').innerHTML=(data||[]).map(a=>`<div class="bv-item"><div class="bv-flex"><div><b>${escapeHtml(a.email)}</b><br><small>${a.id}</small></div>${sa?`<button class="bv-btn bv-danger" onclick="BVAdmin.removeAdmin('${a.email}')">حذف ادمین</button>`:''}</div></div>`).join('')||'<p>ادمینی ثبت نشده است.</p>';}
-  async function addAdmin(){if(!(await isSuperAdmin()))return status('فقط ادمین اصلی اجازه مدیریت ادمین‌ها را دارد.',false);const email=$('bvAdminEmail').value.trim();if(!email)return alert('ایمیل را وارد کن.');const {error}=await supabaseClient.rpc('set_admin_by_email',{p_email:email});if(error){status(error.message,false);return;}status('ادمین با موفقیت اضافه شد.');$('bvAdminEmail').value='';await loadAdmins();}
-  async function removeAdmin(email){if(!(await isSuperAdmin()))return status('فقط ادمین اصلی اجازه مدیریت ادمین‌ها را دارد.',false);if(!confirm('این کاربر از لیست ادمین‌ها حذف شود؟'))return;const {error}=await supabaseClient.rpc('remove_admin_by_email',{p_email:email});if(error){status(error.message,false);return;}status('دسترسی ادمین حذف شد.');await loadAdmins();}
-  function previewImage(event){const files=Array.from(event.target.files||[]),box=$('bvImagePreview'),count=$('bvImageCount');box.innerHTML='';if(!files.length){count.textContent='چند تصویر';return;}for(const file of files){if(!file.type.startsWith('image/')){event.target.value='';box.innerHTML='';alert('لطفاً فقط فایل تصویری انتخاب کن.');return;}if(file.size>MAX_IMAGE){event.target.value='';box.innerHTML='';alert(`حجم «${file.name}» بیشتر از 8MB است.`);return;}const w=document.createElement('div');w.className='bv-upload-thumb';w.innerHTML=`<img src="${URL.createObjectURL(file)}" alt="preview" style="cursor:zoom-in" onclick="openLightbox(this.src)"><div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(file.name)}</div>`;box.appendChild(w);}count.textContent=`${files.length} تصویر`;}
-  function previewAttachments(event){const files=Array.from(event.target.files||[]),box=$('bvAttachmentPreview'),count=$('bvAttachmentCount');box.innerHTML='';for(const file of files){const ext=(file.name.split('.').pop()||'').toLowerCase();if(!allowed.includes(ext)){event.target.value='';box.innerHTML='';alert('فقط PDF، Word و PowerPoint مجاز است.');return;}if(file.size>MAX_FILE){event.target.value='';box.innerHTML='';alert(`حجم «${file.name}» بیشتر از 20MB است.`);return;}const w=document.createElement('div');w.className='bv-upload-thumb';w.innerHTML=`<div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📎 ${escapeHtml(file.name)}</div>`;box.appendChild(w);}count.textContent=files.length?`${files.length} فایل انتخاب شده است.`:'PDF، Word و PowerPoint؛ هر فایل حداکثر 20MB.';}
-  async function uploadImage(file){const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';const path=`content/${Date.now()}-${crypto.randomUUID()}.${ext}`;const b=supabaseClient.storage.from('biovibe-images');const {error}=await b.upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});if(error)throw new Error(`خطا در آپلود «${file.name}»: ${error.message}`);return b.getPublicUrl(path).data.publicUrl;}
-  async function uploadAttachment(file){const ext=(file.name.split('.').pop()||'bin').toLowerCase();const path=`content-files/${Date.now()}-${crypto.randomUUID()}.${ext}`;const b=supabaseClient.storage.from('biovibe-files');const {error}=await b.upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||'application/octet-stream'});if(error)throw new Error(`خطا در آپلود فایل «${file.name}»: ${error.message}`);return {name:file.name,url:b.getPublicUrl(path).data.publicUrl};}
-  async function addContent(){const title=$('bvTitle').value.trim();if(!title)return alert('عنوان را وارد کن.');const images=Array.from($('bvImageFile').files||[]),files=Array.from($('bvAttachmentFiles').files||[]);try{status(`در حال آپلود ${images.length} تصویر و ${files.length} فایل...`);const image_urls=[];for(const f of images)image_urls.push(await uploadImage(f));const attachment_urls=[];for(const f of files)attachment_urls.push(await uploadAttachment(f));const payload={section:$('bvSection').value,title,description:$('bvDescription').value.trim(),image_url:image_urls[0]||null,image_urls,attachment_urls,link_url:$('bvLinkUrl').value.trim()||null};const {error}=await supabaseClient.from('contents').insert(payload);if(error)throw new Error(`محتوا ذخیره نشد: ${error.message}`);status(`محتوا با ${image_urls.length} تصویر و ${attachment_urls.length} فایل منتشر شد.`);$('bvTitle').value='';$('bvDescription').value='';$('bvLinkUrl').value='';$('bvImageFile').value='';$('bvAttachmentFiles').value='';$('bvImagePreview').innerHTML='';$('bvAttachmentPreview').innerHTML='';await loadContents();if(typeof loadContent==='function')await loadContent();}catch(e){status(e.message||'خطا در انتشار محتوا',false);}}
-  async function loadContents(){const {data,error}=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(100);if(error){$('bvContentList').innerHTML='<p>'+escapeHtml(error.message)+'</p>';return;}$('bvContentList').innerHTML='<h3>📚 محتواهای اخیر</h3>'+((data||[]).map(x=>{const u=getImageUrls(x),f=getAttachments(x);const thumbs=u.length?`<div class="bv-upload-list">${u.slice(0,6).map(z=>`<img src="${escapeHtml(z)}" onclick="openLightbox(this.src)" style="width:100%;height:90px;object-fit:cover;border-radius:10px;cursor:zoom-in" onerror="this.style.display='none'">`).join('')}</div>`:'';return `<div class="bv-item"><div class="bv-flex"><div style="flex:1"><b>${escapeHtml(x.title||'بدون عنوان')}</b><br><small>${escapeHtml(x.section)}${u.length?` · ${u.length} تصویر`:''}${f.length?` · ${f.length} فایل`:''}</small>${thumbs}<p>${escapeHtml(x.description||'')}</p></div><button class="bv-btn bv-danger" onclick="BVAdmin.deleteContent('${x.id}')">حذف</button></div></div>`}).join('')||'<p>هنوز محتوایی ثبت نشده است.</p>');}
-  async function deleteContent(id){if(!confirm('این محتوا حذف شود؟'))return;const {error}=await supabaseClient.from('contents').delete().eq('id',id);if(error){status(error.message,false);return;}status('محتوا حذف شد.');await loadContents();if(typeof loadContent==='function')await loadContent();}
-  function escapeHtml(s){return String(s).replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
-  supabaseClient.auth.onAuthStateChange(()=>setTimeout(refreshButton,100));setTimeout(refreshButton,500);return {open,close,addAdmin,removeAdmin,addContent,deleteContent,previewImage,previewAttachments,refreshButton};
-})();
 </script>
 </body>
 </html>
