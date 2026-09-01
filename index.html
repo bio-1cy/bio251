@@ -580,7 +580,6 @@
 <input id="bvAdminEmail" type="email" placeholder="ایمیل کاربر برای ادمین شدن" autocomplete="email">
 <button class="bv-admin-btn bv-admin-primary" type="button" onclick="BVOriginalAdmin.addAdmin()">افزودن ادمین</button>
 </div>
-<div id="bvAdminManageNote" class="bv-admin-sub"></div>
 <div class="bv-admin-sub" style="margin-top:14px">لیست ادمین‌های فعلی:</div>
 <div id="bvAdminList"></div>
 <div class="bv-admin-sub">ادمین اصلی: ariakangavari8@gmail.com — قابل حذف نیست.</div>
@@ -617,11 +616,8 @@ async function open(){
   if(!(await admin())){alert('دسترسی ادمین ندارید.');return}
   $('bvAdminOverlay').style.display='block';
   $('bvAdminUsersSection').style.display='block';
-  const p=await primary();
-  window.__bvIsPrimary=p;
-  const controls=$('bvAdminManageControls'), note=$('bvAdminManageNote');
-  if(controls)controls.style.display=p?'flex':'none';
-  if(note)note.textContent=p?'':'فقط ادمین اصلی می‌تواند ادمین اضافه یا حذف کند.';
+  const controls=$('bvAdminManageControls');
+  if(controls)controls.style.display='flex';
   await loadContents();
   await loadAdmins();
 }
@@ -630,15 +626,14 @@ async function loadAdmins(){
   const l=$('bvAdminList');
   l.innerHTML='<div class="bv-admin-sub">در حال بارگذاری لیست ادمین‌ها...</div>';
   try{
-    const r=await supabaseClient.rpc('superadmin_list_admins');
+    const r=await supabaseClient.rpc('biovibe_list_admins');
     if(r.error) throw r.error;
     const rows=Array.isArray(r.data)?r.data:[];
-    const p=String((await user())?.email||'').trim().toLowerCase()===PRIMARY || !!window.__bvIsPrimary;
     if(!rows.length){l.innerHTML='<p class="bv-admin-sub">هنوز ادمینی ثبت نشده است.</p>';return;}
     l.innerHTML=rows.filter(x=>x.email).map(a=>{
       const email=String(a.email).trim();
       const m=email.toLowerCase()===PRIMARY;
-      const del=(p&&!m)?`<button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin(${JSON.stringify(email)})">حذف دسترسی</button>`:'';
+      const del=!m?`<button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin(${JSON.stringify(email)})">حذف دسترسی</button>`:'';
       return `<div class="bv-admin-item"><div><b>${esc(email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${del}</div>`;
     }).join('');
   }catch(e){
@@ -646,26 +641,26 @@ async function loadAdmins(){
   }
 }
 async function addAdmin(){
-  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین اضافه کند.',false);
+  if(!(await admin()))return msg('دسترسی مدیریت ادمین ندارید.',false);
   const email=$('bvAdminEmail').value.trim().toLowerCase();
   if(!email)return alert('ایمیل کاربر را وارد کنید.');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg('فرمت ایمیل صحیح نیست.',false);
   if(email===PRIMARY)return msg('این ایمیل از قبل ادمین اصلی است.',false);
   msg('در حال اضافه کردن ادمین...');
-  const r=await supabaseClient.rpc('superadmin_set_admin',{p_email:email});
+  const r=await supabaseClient.rpc('biovibe_add_admin_by_email',{p_email:email});
   if(r.error)return msg(r.error.message||'افزودن ادمین انجام نشد.',false);
   $('bvAdminEmail').value='';
   msg('ادمین با موفقیت اضافه شد.');
   await loadAdmins();
 }
 async function removeAdmin(email){
-  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین حذف کند.',false);
+  if(!(await admin()))return msg('دسترسی مدیریت ادمین ندارید.',false);
   const clean=String(email||'').trim().toLowerCase();
   if(clean===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
   if(!clean)return;
   if(!confirm('دسترسی ادمین برای «'+clean+'» حذف شود؟'))return;
   msg('در حال حذف دسترسی ادمین...');
-  const r=await supabaseClient.rpc('superadmin_remove_admin',{p_email:clean});
+  const r=await supabaseClient.rpc('biovibe_remove_admin_by_email',{p_email:clean});
   if(r.error)return msg(r.error.message||'حذف ادمین انجام نشد.',false);
   msg('دسترسی ادمین حذف شد.');
   await loadAdmins();
