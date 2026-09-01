@@ -590,9 +590,42 @@ async function admin(){const u=await user();if(!u)return false;if(String(u.email
 async function refresh(){const b=$('bvAdminBtn');if(b)b.style.display=(await admin())?'block':'none'}
 async function open(){if(!(await admin())){alert('دسترسی ادمین ندارید.');return}$('bvAdminOverlay').style.display='block';const p=await primary();$('bvAdminUsersSection').style.display=p?'block':'none';await loadContents();if(p)await loadAdmins()}
 function close(){$('bvAdminOverlay').style.display='none'}
-async function loadAdmins(){const l=$('bvAdminList');let r=await supabaseClient.rpc('list_admins');let rows=r.error?null:r.data;if(!Array.isArray(rows)){r=await supabaseClient.from('profiles').select('id,email,username,role').in('role',['admin','super_admin']).order('email');if(r.error){l.innerHTML='<p>'+esc(r.error.message)+'</p>';return}rows=r.data}l.innerHTML=(rows||[]).filter(x=>x.email).map(a=>{const m=String(a.email).toLowerCase()===PRIMARY;return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${m?'':`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`}</div>`}).join('')||'<p>ادمینی پیدا نشد.</p>'}
-async function addAdmin(){if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین اضافه کند.',false);const email=$('bvAdminEmail').value.trim().toLowerCase();if(!email)return alert('ایمیل ادمین جدید را وارد کنید.');const r=await supabaseClient.rpc('set_admin_by_email',{p_email:email});if(r.error)return msg(r.error.message,false);$('bvAdminEmail').value='';msg('ادمین با موفقیت اضافه شد.');await loadAdmins()}
-async function removeAdmin(email){if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین حذف کند.',false);if(email===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);if(!confirm('این ادمین حذف شود؟'))return;const r=await supabaseClient.rpc('remove_admin_by_email',{p_email:email});if(r.error)return msg(r.error.message,false);msg('دسترسی ادمین حذف شد.');await loadAdmins()}
+async function callRpc(primaryName, legacyName, args){
+  let r=await supabaseClient.rpc(primaryName,args||{});
+  if(r.error && legacyName) r=await supabaseClient.rpc(legacyName,args||{});
+  return r;
+}
+async function loadAdmins(){
+  const l=$('bvAdminList');
+  let r=await callRpc('superadmin_list_admins','list_admins');
+  let rows=Array.isArray(r.data)?r.data:null;
+  if(!rows){
+    r=await supabaseClient.from('profiles').select('id,email,username,role').in('role',['admin','super_admin']).order('email');
+    if(r.error){l.innerHTML='<p>'+esc(r.error.message)+'</p>';return}
+    rows=r.data||[];
+  }
+  l.innerHTML=(rows||[]).filter(x=>x.email).map(a=>{
+    const m=String(a.email).toLowerCase()===PRIMARY;
+    return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${m?'':`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`}</div>`
+  }).join('')||'<p>ادمینی پیدا نشد.</p>';
+}
+async function addAdmin(){
+  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین اضافه کند.',false);
+  const email=$('bvAdminEmail').value.trim().toLowerCase();
+  if(!email)return alert('ایمیل ادمین جدید را وارد کنید.');
+  if(email===PRIMARY)return msg('این ایمیل از قبل ادمین اصلی است.',false);
+  const r=await callRpc('superadmin_set_admin','set_admin_by_email',{p_email:email});
+  if(r.error)return msg('افزودن ادمین انجام نشد: '+(r.error.message||'خطای نامشخص'),false);
+  $('bvAdminEmail').value='';msg('ادمین با موفقیت اضافه شد.');await loadAdmins();
+}
+async function removeAdmin(email){
+  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین حذف کند.',false);
+  if(email===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
+  if(!confirm('این ادمین حذف شود؟'))return;
+  const r=await callRpc('superadmin_remove_admin','remove_admin_by_email',{p_email:email});
+  if(r.error)return msg('حذف ادمین انجام نشد: '+(r.error.message||'خطای نامشخص'),false);
+  msg('دسترسی ادمین حذف شد.');await loadAdmins();
+}
 function preview(){const a=$('bvContentImages').files.length,b=$('bvContentFiles').files.length;$('bvContentImagesPreview').textContent=a?`${a} تصویر انتخاب شده`:'چند تصویر قابل انتخاب است.';$('bvContentFilesPreview').textContent=b?`${b} فایل انتخاب شده`:'PDF، Word، PowerPoint و Excel.'}
 async function put(bucket,file,prefix){const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin',path=`${prefix}/${Date.now()}-${crypto.randomUUID()}.${ext}`,b=supabaseClient.storage.from(bucket),r=await b.upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});if(r.error)throw r.error;return {name:file.name,url:b.getPublicUrl(path).data.publicUrl}}
 async function publishContent(){if(!(await admin()))return msg('دسترسی ادمین ندارید.',false);const title=$('bvContentTitle').value.trim();if(!title)return alert('عنوان محتوا را وارد کنید.');const imgs=[...$('bvContentImages').files],files=[...$('bvContentFiles').files];if(imgs.some(f=>f.size>8*1024*1024))return msg('هر تصویر باید حداکثر 8MB باشد.',false);if(files.some(f=>f.size>20*1024*1024))return msg('هر فایل باید حداکثر 20MB باشد.',false);try{msg('در حال آپلود و انتشار...');const image_urls=[];for(const f of imgs)image_urls.push((await put(IMAGE_BUCKET,f,'content')).url);const attachment_urls=[];for(const f of files)attachment_urls.push(await put(FILE_BUCKET,f,'content-files'));const payload={section:$('bvContentSection').value,title,description:$('bvContentDescription').value.trim(),image_url:image_urls[0]||null,image_urls,attachment_urls,link_url:$('bvContentLink').value.trim()||null};const r=await supabaseClient.from('contents').insert(payload);if(r.error)throw r.error;$('bvContentTitle').value='';$('bvContentDescription').value='';$('bvContentLink').value='';$('bvContentImages').value='';$('bvContentFiles').value='';preview();msg('محتوا با موفقیت منتشر شد.');await loadContents();if(typeof loadContent==='function')await loadContent()}catch(e){msg(e.message||'انتشار ناموفق بود.',false)}}
