@@ -574,7 +574,7 @@
 <div id="bvAdminOverlay" aria-hidden="true"><div id="bvAdminPanel">
 <div class="bv-admin-row" style="justify-content:space-between"><h2>⚙️ پنل مدیریت BioVibe</h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVOriginalAdmin.close()">بستن</button></div>
 <div id="bvAdminStatus" class="bv-admin-status"></div>
-<section id="bvAdminUsersSection"><h3>👥 مدیریت ادمین‌ها</h3><div class="bv-admin-row"><input id="bvAdminEmail" type="email" placeholder="ایمیل ادمین جدید" autocomplete="email"><button class="bv-admin-btn bv-admin-primary" onclick="BVOriginalAdmin.addAdmin()">+ افزودن</button></div><div id="bvAdminList"></div><div class="bv-admin-sub">ادمین اصلی: ariakangavari8@gmail.com</div></section>
+<section id="bvAdminUsersSection"><h3>مدیریت ادمین‌ها</h3><div id="bvAdminManageControls" class="bv-admin-row"><input id="bvAdminEmail" type="email" placeholder="ایمیل ادمین جدید" autocomplete="email"><button class="bv-admin-btn bv-admin-primary" onclick="BVOriginalAdmin.addAdmin()">افزودن ادمین</button></div><div id="bvAdminManageNote" class="bv-admin-sub"></div><div id="bvAdminList"></div><div class="bv-admin-sub">ادمین اصلی: ariakangavari8@gmail.com</div></section>
 <hr style="border-color:rgba(0,234,255,.14);margin:22px 0">
 <section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" rows="5" placeholder="توضیحات"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
 </div></div>
@@ -607,7 +607,18 @@ async function refresh(){
     console.error('admin refresh',e);
   }
 }
-async function open(){if(!(await admin())){alert('دسترسی ادمین ندارید.');return}$('bvAdminOverlay').style.display='block';const p=await primary();$('bvAdminUsersSection').style.display=p?'block':'none';await loadContents();if(p)await loadAdmins()}
+async function open(){
+  if(!(await admin())){alert('دسترسی ادمین ندارید.');return}
+  $('bvAdminOverlay').style.display='block';
+  const p=await primary();
+  window.__bvIsPrimary=p;
+  $('bvAdminUsersSection').style.display='block';
+  const controls=$('bvAdminManageControls'), note=$('bvAdminManageNote');
+  if(controls)controls.style.display=p?'flex':'none';
+  if(note)note.textContent=p?'': 'فقط ادمین اصلی می‌تواند ادمین اضافه یا حذف کند.';
+  await loadContents();
+  await loadAdmins();
+}
 function close(){$('bvAdminOverlay').style.display='none'}
 async function loadAdmins(){
   const l=$('bvAdminList');
@@ -620,7 +631,7 @@ async function loadAdmins(){
   }
   l.innerHTML=(rows||[]).filter(x=>x.email).map(a=>{
     const m=String(a.email).toLowerCase()===PRIMARY;
-    return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${m?'':`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`}</div>`
+    return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${m||!(String(window.__bvIsPrimary||'false')==='true')?'':`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`}</div>`
   }).join('')||'<p>ادمینی پیدا نشد.</p>';
 }
 async function addAdmin(){
