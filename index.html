@@ -240,7 +240,7 @@
     .page{display:none;min-height:100vh;padding:140px 10%;text-align:center;}
     .content-card{background:rgba(255,255,255,0.05);padding:20px;border-radius:15px;margin:20px auto;max-width:600px;text-align:right;border:1px solid rgba(255,143,200,.12);box-shadow:0 0 20px rgba(255,143,200,.04);}
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
-.bv-recent-home{max-width:1100px;margin:28px auto 20px;padding:0 20px;text-align:center}.bv-recent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.bv-recent-grid .content-card{max-width:none;margin:0}.bv-empty{opacity:.7;padding:16px}.bv-attachments{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding:12px;border:1px solid rgba(0,234,255,.16);border-radius:12px}.bv-attachments a{padding:8px 10px;background:rgba(255,255,255,.04);border-radius:8px;text-decoration:none}.bv-admin-half{flex:1;min-width:220px}.bv-admin-half label{display:block;margin-bottom:6px}.bv-admin-half input{width:100%}
+
 </style>
 
 <style id="biovibe-admin-original-css">
@@ -330,7 +330,6 @@
         </div>
         <div class="hero-content"><h1>BIOVIBE</h1><p>انجمن علمی زیست شناسی</p></div>
     </section>
-    <section id="bvRecentHome" class="bv-recent-home" style="display:none"><div id="recent-home-container" class="bv-recent-grid"></div></section>
     <section id="news" class="page"><h2>Bio‑News</h2><div id="news-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="journal" class="page"><h2>Bio‑Journal Club</h2><div id="journal-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="lab" class="page"><h2>Bio‑Lab</h2><div id="lab-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
@@ -511,7 +510,6 @@
 
     function openPage(id){
         document.getElementById("heroSection").style.display="none";
-        const r=document.getElementById("bvRecentHome"); if(r)r.style.display="none";
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
         const p=document.getElementById(id); if(p)p.style.display="block";
         sideMenu.classList.remove("active");
@@ -519,7 +517,6 @@
     function closePages(){
         document.querySelectorAll(".page").forEach(p=>p.style.display="none");
         document.getElementById("heroSection").style.display="flex";
-        const r=document.getElementById("bvRecentHome"); if(r)r.style.display="block";
     }
     function arr(v){if(Array.isArray(v))return v;if(typeof v==='string'){try{const x=JSON.parse(v);return Array.isArray(x)?x:[v]}catch(_){return v?[v]:[]}}return []}
     function imageUrls(x){let a=arr(x.image_urls);if(!a.length&&x.image_url)a=[x.image_url];return a.map(v=>typeof v==='string'?v:(v&&v.url)||'').filter(Boolean)}
@@ -533,16 +530,12 @@
       return `<div class="content-card"><h3>${safe(x.title||'بدون عنوان')}</h3>${g}<p>${safe(x.description||'')}</p>${f}${l}</div>`;
     }
     async function loadContent(){
-      const c={news:document.getElementById('news-container'),journal:document.getElementById('journal-container'),lab:document.getElementById('lab-container'),media:document.getElementById('media-container'),company:document.getElementById('company-container'),recent:document.getElementById('recent-home-container')};
+      const c={news:document.getElementById('news-container'),journal:document.getElementById('journal-container'),lab:document.getElementById('lab-container'),media:document.getElementById('media-container'),company:document.getElementById('company-container')};
       try{
         const r=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(200);
         if(r.error)throw r.error;
         const rows=r.data||[], draw=a=>a.length?a.map(renderContent).join(''):'<div class="bv-empty">هنوز محتوایی قرار نگرفته است.</div>';
         c.news.innerHTML=draw(rows.filter(x=>x.section==='Bio-News')); c.journal.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Journal Club'||x.section==='Bio-Journal Club')); c.lab.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Lab'||x.section==='Bio-Lab')); c.media.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Media'||x.section==='Bio-Media')); c.company.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Company'||x.section==='Bio-Company'));
-        const cut=Date.now()-14*60*60*1000; const recent=rows.filter(x=>{const t=Date.parse(x.created_at||'');return Number.isFinite(t)&&t>=cut;});
-        const recentHome=document.getElementById('bvRecentHome');
-        if(recent.length){ c.recent.innerHTML=recent.map(renderContent).join(''); if(recentHome) recentHome.style.display='block'; }
-        else { c.recent.innerHTML=''; if(recentHome) recentHome.style.display='none'; }
       }catch(e){console.error(e);Object.values(c).forEach(el=>{if(el)el.innerHTML='<div class="bv-empty">خطا در بارگذاری محتوا.</div>'})}
     }
     async function restoreSession() {
@@ -578,7 +571,7 @@
 <div id="bvAdminStatus" class="bv-admin-status"></div>
 <section id="bvAdminUsersSection"><h3>👥 مدیریت ادمین‌ها</h3><div class="bv-admin-row"><input id="bvAdminEmail" type="email" placeholder="ایمیل ادمین جدید" autocomplete="email"><button class="bv-admin-btn bv-admin-primary" onclick="BVOriginalAdmin.addAdmin()">+ افزودن</button></div><div id="bvAdminList"></div><div class="bv-admin-sub">ادمین اصلی: ariakangavari8@gmail.com</div></section>
 <hr style="border-color:rgba(0,234,255,.14);margin:22px 0">
-<section id="bvAdminContentSection"><h3>📝 انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" rows="5" placeholder="توضیحات"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">🚀 انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
+<section id="bvAdminContentSection"><h3>📝 انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" rows="5" placeholder="توضیحات"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
 </div></div>
 
 <script id="biovibe-original-admin-js">
@@ -592,7 +585,6 @@ async function admin(){const u=await user();if(!u)return false;if(String(u.email
 async function refresh(){const b=$('bvAdminBtn');if(b)b.style.display=(await admin())?'block':'none'}
 async function open(){if(!(await admin())){alert('دسترسی ادمین ندارید.');return}$('bvAdminOverlay').style.display='block';const p=await primary();$('bvAdminUsersSection').style.display=p?'block':'none';await loadContents();if(p)await loadAdmins()}
 function close(){$('bvAdminOverlay').style.display='none'}
-async 
 async function loadAdmins(){
   const l=$('bvAdminList');
   let r=await supabaseClient.rpc('superadmin_list_admins');
