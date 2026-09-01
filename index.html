@@ -330,7 +330,7 @@
         </div>
         <div class="hero-content"><h1>BIOVIBE</h1><p>انجمن علمی زیست شناسی</p></div>
     </section>
-    <section id="bvRecentHome" class="bv-recent-home"><h2>✨ محتوای جدید</h2><div id="recent-home-container" class="bv-recent-grid"></div></section>
+    <section id="bvRecentHome" class="bv-recent-home" style="display:none"><div id="recent-home-container" class="bv-recent-grid"></div></section>
     <section id="news" class="page"><h2>Bio‑News</h2><div id="news-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="journal" class="page"><h2>Bio‑Journal Club</h2><div id="journal-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="lab" class="page"><h2>Bio‑Lab</h2><div id="lab-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
@@ -540,7 +540,9 @@
         const rows=r.data||[], draw=a=>a.length?a.map(renderContent).join(''):'<div class="bv-empty">هنوز محتوایی قرار نگرفته است.</div>';
         c.news.innerHTML=draw(rows.filter(x=>x.section==='Bio-News')); c.journal.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Journal Club'||x.section==='Bio-Journal Club')); c.lab.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Lab'||x.section==='Bio-Lab')); c.media.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Media'||x.section==='Bio-Media')); c.company.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Company'||x.section==='Bio-Company'));
         const cut=Date.now()-14*60*60*1000; const recent=rows.filter(x=>{const t=Date.parse(x.created_at||'');return Number.isFinite(t)&&t>=cut;});
-        c.recent.innerHTML=recent.length?recent.map(renderContent).join(''):'<div class="bv-empty">در ۱۴ ساعت اخیر محتوای جدیدی منتشر نشده است.</div>';
+        const recentHome=document.getElementById('bvRecentHome');
+        if(recent.length){ c.recent.innerHTML=recent.map(renderContent).join(''); if(recentHome) recentHome.style.display='block'; }
+        else { c.recent.innerHTML=''; if(recentHome) recentHome.style.display='none'; }
       }catch(e){console.error(e);Object.values(c).forEach(el=>{if(el)el.innerHTML='<div class="bv-empty">خطا در بارگذاری محتوا.</div>'})}
     }
     async function restoreSession() {
@@ -586,18 +588,14 @@ const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'
 function msg(t,ok=true){const e=$('bvAdminStatus');e.style.display='block';e.textContent=t;e.style.borderColor=ok?'rgba(0,234,255,.35)':'rgba(255,80,110,.5)'}
 async function user(){return (await supabaseClient.auth.getUser()).data?.user||null}
 async function primary(){const u=await user();return !!u&&String(u.email||'').toLowerCase()===PRIMARY}
-async function admin(){const u=await user();if(!u)return false;if(String(u.email||'').toLowerCase()===PRIMARY)return true;const r=await supabaseClient.from('profiles').select('role').eq('id',u.id).maybeSingle();return !r.error&&['admin','super_admin'].includes(String(r.data?.role||'').toLowerCase())}
+async function admin(){const u=await user();if(!u)return false;if(String(u.email||'').trim().toLowerCase()===PRIMARY)return true;const r=await supabaseClient.rpc('biovibe_admin_access');if(!r.error&&r.data===true)return true;const p=await supabaseClient.from('profiles').select('role').eq('id',u.id).maybeSingle();return !p.error&&['admin','super_admin'].includes(String(p.data?.role||'').toLowerCase())}
 async function refresh(){const b=$('bvAdminBtn');if(b)b.style.display=(await admin())?'block':'none'}
 async function open(){if(!(await admin())){alert('دسترسی ادمین ندارید.');return}$('bvAdminOverlay').style.display='block';const p=await primary();$('bvAdminUsersSection').style.display=p?'block':'none';await loadContents();if(p)await loadAdmins()}
 function close(){$('bvAdminOverlay').style.display='none'}
-async function callRpc(primaryName, legacyName, args){
-  let r=await supabaseClient.rpc(primaryName,args||{});
-  if(r.error && legacyName) r=await supabaseClient.rpc(legacyName,args||{});
-  return r;
-}
+async 
 async function loadAdmins(){
   const l=$('bvAdminList');
-  let r=await callRpc('superadmin_list_admins','list_admins');
+  let r=await supabaseClient.rpc('superadmin_list_admins');
   let rows=Array.isArray(r.data)?r.data:null;
   if(!rows){
     r=await supabaseClient.from('profiles').select('id,email,username,role').in('role',['admin','super_admin']).order('email');
@@ -614,7 +612,7 @@ async function addAdmin(){
   const email=$('bvAdminEmail').value.trim().toLowerCase();
   if(!email)return alert('ایمیل ادمین جدید را وارد کنید.');
   if(email===PRIMARY)return msg('این ایمیل از قبل ادمین اصلی است.',false);
-  const r=await callRpc('superadmin_set_admin','set_admin_by_email',{p_email:email});
+  const r=await supabaseClient.rpc('superadmin_set_admin',{p_email:email});
   if(r.error)return msg('افزودن ادمین انجام نشد: '+(r.error.message||'خطای نامشخص'),false);
   $('bvAdminEmail').value='';msg('ادمین با موفقیت اضافه شد.');await loadAdmins();
 }
@@ -622,7 +620,7 @@ async function removeAdmin(email){
   if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین حذف کند.',false);
   if(email===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
   if(!confirm('این ادمین حذف شود؟'))return;
-  const r=await callRpc('superadmin_remove_admin','remove_admin_by_email',{p_email:email});
+  const r=await supabaseClient.rpc('superadmin_remove_admin',{p_email:email});
   if(r.error)return msg('حذف ادمین انجام نشد: '+(r.error.message||'خطای نامشخص'),false);
   msg('دسترسی ادمین حذف شد.');await loadAdmins();
 }
