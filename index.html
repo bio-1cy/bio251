@@ -585,53 +585,54 @@ const PRIMARY='ariakangavari8@gmail.com'.toLowerCase(),IMAGE_BUCKET='biovibe-ima
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
 function msg(t,ok=true){const e=$('bvAdminStatus');e.style.display='block';e.textContent=t;e.style.borderColor=ok?'rgba(0,234,255,.35)':'rgba(255,80,110,.5)'}
 async function user(){return (await supabaseClient.auth.getUser()).data?.user||null}
-async function primary(){const u=await user();return !!u&&String(u.email||'').toLowerCase()===PRIMARY}
+async function primary(){const u=await user();if(!u)return false;if(String(u.email||'').trim().toLowerCase()===PRIMARY)return true;try{const r=await supabaseClient.rpc('biovibe_is_primary_admin');if(!r.error&&r.data===true)return true}catch(e){}return false}
 async function admin(){const u=await user();if(!u)return false;if(String(u.email||'').trim().toLowerCase()===PRIMARY)return true;const r=await supabaseClient.rpc('biovibe_admin_access');if(!r.error&&r.data===true)return true;const p=await supabaseClient.from('profiles').select('role').eq('id',u.id).maybeSingle();return !p.error&&['admin','super_admin'].includes(String(p.data?.role||'').toLowerCase())}
 async function refresh(){
   const b=$('bvAdminBtn'), hb=$('bvAdminHeaderBtn');
-  if(!b && !hb)return;
   try{
-    const s=await supabaseClient.auth.getSession();
-    const u=s.data?.session?.user||null;
+    const u=await user();
     if(!u){if(b)b.style.display='none';if(hb)hb.style.display='none';return;}
-    const isPrimary=String(u.email||'').trim().toLowerCase()===PRIMARY;
-    let allowed=isPrimary;
+    const p=await primary();
+    let allowed=p;
     if(!allowed){
-      const r=await supabaseClient.rpc('biovibe_admin_access');
-      allowed=!r.error&&r.data===true;
+      try{const r=await supabaseClient.rpc('biovibe_admin_access');allowed=!r.error&&r.data===true;}catch(e){}
     }
     if(b)b.style.display='none';
     if(hb)hb.style.display=allowed?'inline-block':'none';
   }catch(e){
-    if(b)b.style.display='none'; if(hb)hb.style.display='none';
-    console.error('admin refresh',e);
+    if(b)b.style.display='none';if(hb)hb.style.display='none';console.error('admin refresh',e);
   }
 }
 async function open(){
   if(!(await admin())){alert('دسترسی ادمین ندارید.');return}
   $('bvAdminOverlay').style.display='block';
+  $('bvAdminUsersSection').style.display='block';
   const p=await primary();
   window.__bvIsPrimary=p;
-  $('bvAdminUsersSection').style.display='block';
   const controls=$('bvAdminManageControls'), note=$('bvAdminManageNote');
   if(controls)controls.style.display=p?'flex':'none';
-  if(note)note.textContent=p?'': 'فقط ادمین اصلی می‌تواند ادمین اضافه یا حذف کند.';
+  if(note)note.textContent=p?'':'فقط ادمین اصلی می‌تواند ادمین اضافه یا حذف کند.';
   await loadContents();
   await loadAdmins();
 }
 function close(){$('bvAdminOverlay').style.display='none'}
 async function loadAdmins(){
   const l=$('bvAdminList');
-  let r=await supabaseClient.rpc('superadmin_list_admins');
-  let rows=Array.isArray(r.data)?r.data:null;
+  let rows=null;
+  try{
+    const r=await supabaseClient.rpc('superadmin_list_admins');
+    if(!r.error && Array.isArray(r.data)) rows=r.data;
+  }catch(e){}
   if(!rows){
-    r=await supabaseClient.from('profiles').select('id,email,username,role').in('role',['admin','super_admin']).order('email');
+    const r=await supabaseClient.from('profiles').select('id,email,username,role').in('role',['admin','super_admin']).order('email');
     if(r.error){l.innerHTML='<p>'+esc(r.error.message)+'</p>';return}
     rows=r.data||[];
   }
+  const p=!!window.__bvIsPrimary;
   l.innerHTML=(rows||[]).filter(x=>x.email).map(a=>{
-    const m=String(a.email).toLowerCase()===PRIMARY;
-    return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${m||!(String(window.__bvIsPrimary||'false')==='true')?'':`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`}</div>`
+    const m=String(a.email).trim().toLowerCase()===PRIMARY;
+    const del=p&&!m?`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`:'';
+    return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${del}</div>`;
   }).join('')||'<p>ادمینی پیدا نشد.</p>';
 }
 async function addAdmin(){
