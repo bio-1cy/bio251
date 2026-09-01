@@ -574,7 +574,17 @@
 <div id="bvAdminOverlay" aria-hidden="true"><div id="bvAdminPanel">
 <div class="bv-admin-row" style="justify-content:space-between"><h2>⚙️ پنل مدیریت BioVibe</h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVOriginalAdmin.close()">بستن</button></div>
 <div id="bvAdminStatus" class="bv-admin-status"></div>
-<section id="bvAdminUsersSection"><h3>مدیریت ادمین‌ها</h3><div id="bvAdminManageControls" class="bv-admin-row"><input id="bvAdminEmail" type="email" placeholder="ایمیل ادمین جدید" autocomplete="email"><button class="bv-admin-btn bv-admin-primary" onclick="BVOriginalAdmin.addAdmin()">افزودن ادمین</button></div><div id="bvAdminManageNote" class="bv-admin-sub"></div><div id="bvAdminList"></div><div class="bv-admin-sub">ادمین اصلی: ariakangavari8@gmail.com</div></section>
+<section id="bvAdminUsersSection">
+<h3>مدیریت ادمین‌ها</h3>
+<div id="bvAdminManageControls" class="bv-admin-row">
+<input id="bvAdminEmail" type="email" placeholder="ایمیل کاربر برای ادمین شدن" autocomplete="email">
+<button class="bv-admin-btn bv-admin-primary" type="button" onclick="BVOriginalAdmin.addAdmin()">افزودن ادمین</button>
+</div>
+<div id="bvAdminManageNote" class="bv-admin-sub"></div>
+<div class="bv-admin-sub" style="margin-top:14px">لیست ادمین‌های فعلی:</div>
+<div id="bvAdminList"></div>
+<div class="bv-admin-sub">ادمین اصلی: ariakangavari8@gmail.com — قابل حذف نیست.</div>
+</section>
 <hr style="border-color:rgba(0,234,255,.14);margin:22px 0">
 <section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" rows="5" placeholder="توضیحات"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
 </div></div>
@@ -618,39 +628,47 @@ async function open(){
 function close(){$('bvAdminOverlay').style.display='none'}
 async function loadAdmins(){
   const l=$('bvAdminList');
-  let rows=null;
+  l.innerHTML='<div class="bv-admin-sub">در حال بارگذاری لیست ادمین‌ها...</div>';
   try{
     const r=await supabaseClient.rpc('superadmin_list_admins');
-    if(!r.error && Array.isArray(r.data)) rows=r.data;
-  }catch(e){}
-  if(!rows){
-    const r=await supabaseClient.from('profiles').select('id,email,username,role').in('role',['admin','super_admin']).order('email');
-    if(r.error){l.innerHTML='<p>'+esc(r.error.message)+'</p>';return}
-    rows=r.data||[];
+    if(r.error) throw r.error;
+    const rows=Array.isArray(r.data)?r.data:[];
+    const p=String((await user())?.email||'').trim().toLowerCase()===PRIMARY || !!window.__bvIsPrimary;
+    if(!rows.length){l.innerHTML='<p class="bv-admin-sub">هنوز ادمینی ثبت نشده است.</p>';return;}
+    l.innerHTML=rows.filter(x=>x.email).map(a=>{
+      const email=String(a.email).trim();
+      const m=email.toLowerCase()===PRIMARY;
+      const del=(p&&!m)?`<button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin(${JSON.stringify(email)})">حذف دسترسی</button>`:'';
+      return `<div class="bv-admin-item"><div><b>${esc(email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${del}</div>`;
+    }).join('');
+  }catch(e){
+    l.innerHTML='<div class="bv-admin-sub" style="color:#ff9ab0">خطا در دریافت لیست ادمین‌ها: '+esc(e?.message||'خطای نامشخص')+'</div>';
   }
-  const p=!!window.__bvIsPrimary;
-  l.innerHTML=(rows||[]).filter(x=>x.email).map(a=>{
-    const m=String(a.email).trim().toLowerCase()===PRIMARY;
-    const del=p&&!m?`<button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.removeAdmin('${String(a.email).replace(/'/g,"\\'")}')">حذف</button>`:'';
-    return `<div class="bv-admin-item"><div><b>${esc(a.email)}</b><div class="bv-admin-sub">${esc(a.role||'admin')}${m?' · ادمین اصلی':''}</div></div>${del}</div>`;
-  }).join('')||'<p>ادمینی پیدا نشد.</p>';
 }
 async function addAdmin(){
   if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین اضافه کند.',false);
   const email=$('bvAdminEmail').value.trim().toLowerCase();
-  if(!email)return alert('ایمیل ادمین جدید را وارد کنید.');
+  if(!email)return alert('ایمیل کاربر را وارد کنید.');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg('فرمت ایمیل صحیح نیست.',false);
   if(email===PRIMARY)return msg('این ایمیل از قبل ادمین اصلی است.',false);
+  msg('در حال اضافه کردن ادمین...');
   const r=await supabaseClient.rpc('superadmin_set_admin',{p_email:email});
-  if(r.error)return msg('افزودن ادمین انجام نشد: '+(r.error.message||'خطای نامشخص'),false);
-  $('bvAdminEmail').value='';msg('ادمین با موفقیت اضافه شد.');await loadAdmins();
+  if(r.error)return msg(r.error.message||'افزودن ادمین انجام نشد.',false);
+  $('bvAdminEmail').value='';
+  msg('ادمین با موفقیت اضافه شد.');
+  await loadAdmins();
 }
 async function removeAdmin(email){
   if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین حذف کند.',false);
-  if(email===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
-  if(!confirm('این ادمین حذف شود؟'))return;
-  const r=await supabaseClient.rpc('superadmin_remove_admin',{p_email:email});
-  if(r.error)return msg('حذف ادمین انجام نشد: '+(r.error.message||'خطای نامشخص'),false);
-  msg('دسترسی ادمین حذف شد.');await loadAdmins();
+  const clean=String(email||'').trim().toLowerCase();
+  if(clean===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
+  if(!clean)return;
+  if(!confirm('دسترسی ادمین برای «'+clean+'» حذف شود؟'))return;
+  msg('در حال حذف دسترسی ادمین...');
+  const r=await supabaseClient.rpc('superadmin_remove_admin',{p_email:clean});
+  if(r.error)return msg(r.error.message||'حذف ادمین انجام نشد.',false);
+  msg('دسترسی ادمین حذف شد.');
+  await loadAdmins();
 }
 function preview(){const a=$('bvContentImages').files.length,b=$('bvContentFiles').files.length;$('bvContentImagesPreview').textContent=a?`${a} تصویر انتخاب شده`:'چند تصویر قابل انتخاب است.';$('bvContentFilesPreview').textContent=b?`${b} فایل انتخاب شده`:'PDF، Word، PowerPoint و Excel.'}
 async function put(bucket,file,prefix){const ext=(file.name.split('.').pop()||'bin').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin',path=`${prefix}/${Date.now()}-${crypto.randomUUID()}.${ext}`,b=supabaseClient.storage.from(bucket),r=await b.upload(path,file,{upsert:false,contentType:file.type||'application/octet-stream'});if(r.error)throw r.error;return {name:file.name,url:b.getPublicUrl(path).data.publicUrl}}
