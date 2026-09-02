@@ -665,11 +665,13 @@ async function refresh(){
 }
 async function open(){
   $('bvAdminOverlay').style.display='block';
-  $('bvAdminUsersSection').style.display='block';
-  const controls=$('bvAdminManageControls');
-  if(controls)controls.style.display='flex';
   if(!(await admin())){$('bvAdminOverlay').style.display='none';alert('دسترسی ادمین ندارید.');return}
-  Promise.all([loadContents(),loadAdmins()]);
+  const isPrimary=await primary();
+  $('bvAdminUsersSection').style.display=isPrimary?'block':'none';
+  const controls=$('bvAdminManageControls');
+  if(controls)controls.style.display=isPrimary?'flex':'none';
+  await loadContents();
+  if(isPrimary) await loadAdmins();
 }
 function close(){$('bvAdminOverlay').style.display='none'}
 async function loadAdmins(){
@@ -691,7 +693,7 @@ async function loadAdmins(){
   }
 }
 async function addAdmin(){
-  if(!(await admin()))return msg('دسترسی مدیریت ادمین ندارید.',false);
+  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین‌ها را مدیریت کند.',false);
   const email=$('bvAdminEmail').value.trim().toLowerCase();
   if(!email)return alert('ایمیل کاربر را وارد کنید.');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg('فرمت ایمیل صحیح نیست.',false);
@@ -704,7 +706,7 @@ async function addAdmin(){
   await loadAdmins();
 }
 async function removeAdmin(email){
-  if(!(await admin()))return msg('دسترسی مدیریت ادمین ندارید.',false);
+  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین‌ها را مدیریت کند.',false);
   const clean=String(email||'').trim().toLowerCase();
   if(clean===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
   if(!clean)return;
