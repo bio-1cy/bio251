@@ -418,7 +418,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         <div class="logo-fa">بایو وایب</div>
         <div style="display:flex;gap:8px;align-items:center">
             <button id="bvAdminHeaderBtn" type="button" onclick="BVOriginalAdmin.open()">پنل مدیریت</button>
-            <button id="bvSuperAdminHeaderBtn" type="button" onclick="BVSuperAdmin.open()">مدیریت ادمین‌ها</button>
+            <button id="bvSuperAdminHeaderBtn" type="button" onclick="BVPrimaryAdmin.open()">مدیریت ادمین‌ها</button>
             <button class="logout-btn" onclick="logout()">خروج</button>
         </div>
     </header>
@@ -949,6 +949,51 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{window.BVSuperAdmin&&window.BVSuperAdmin.refresh()}catch(e){} try{window.BVOriginalAdmin&&window.BVOriginalAdmin.refresh()}catch(e){}},100);});
+</script>
+<script id="biovibe-primary-admin-final-fix">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com'.trim().toLowerCase();
+  const btn=()=>document.getElementById('bvSuperAdminHeaderBtn');
+  async function getUser(){
+    try{
+      const r=await supabaseClient.auth.getSession();
+      return r?.data?.session?.user||null;
+    }catch(e){
+      try{return (await supabaseClient.auth.getUser()).data?.user||null}catch(_){return null}
+    }
+  }
+  function emailMatches(u){
+    const emails=[
+      u?.email,
+      u?.user_metadata?.email,
+      ...(Array.isArray(u?.identities)?u.identities.map(x=>x?.identity_data?.email):[])
+    ].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
+    return emails.includes(PRIMARY);
+  }
+  async function refresh(){
+    const b=btn(); if(!b)return;
+    const u=await getUser();
+    b.style.display=(u && emailMatches(u))?'inline-block':'none';
+  }
+  async function open(){
+    const u=await getUser();
+    if(!u || !emailMatches(u)){
+      alert('این پنل فقط برای ادمین اصلی در دسترس است.');
+      return;
+    }
+    const o=document.getElementById('bvSuperAdminOverlay');
+    if(o){o.style.display='block';o.setAttribute('aria-hidden','false');}
+    if(window.BVSuperAdmin?.load) await window.BVSuperAdmin.load();
+    else if(window.BVSuperAdmin?.open) await window.BVSuperAdmin.open();
+  }
+  window.BVPrimaryAdmin={open,refresh};
+  async function boot(){await refresh();setTimeout(refresh,300);setTimeout(refresh,1000);setTimeout(refresh,2500);}
+  if(window.supabaseClient?.auth){
+    supabaseClient.auth.onAuthStateChange(function(){setTimeout(refresh,0);setTimeout(refresh,250);});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+  setInterval(refresh,3000);
+})();
 </script>
 </body>
 </html>
