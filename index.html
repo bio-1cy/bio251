@@ -749,7 +749,6 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 </div></div>
 <button id="bvAdminBtn" type="button" onclick="BVOriginalAdmin.open()">⚙️ پنل مدیریت</button>
 
-<button id="bvPrimaryAdminLauncher" type="button" onclick="BVSuperAdmin.open()">مدیریت ادمین‌ها</button>
 <div id="bvSuperAdminOverlay" aria-hidden="true">
   <div id="bvSuperAdminPanel">
     <div class="bv-sa-head">
@@ -780,66 +779,68 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
   const PRIMARY='ariakangavari8@gmail.com'.toLowerCase();
   const $=id=>document.getElementById(id);
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  function status(t,ok=true){const e=$('bvSuperAdminStatus');if(!e)return;e.style.display='block';e.textContent=t;e.style.borderColor=ok?'rgba(0,234,255,.35)':'rgba(255,80,110,.5)'}
-  async function currentUser(){try{return (await supabaseClient.auth.getUser()).data?.user||null}catch(e){return null}}
+  function status(t,ok=true){const e=$('bvSuperAdminStatus');if(!e)return;e.style.display='block';e.textContent=t;e.style.borderColor=ok?'rgba(0,234,255,.35)':'rgba(255,80,110,.5)';}
+  async function getUser(){try{return (await supabaseClient.auth.getUser()).data?.user||null}catch(e){return null}}
   async function isPrimary(){
-    const u=await currentUser();
-    const emails=[u?.email,u?.user_metadata?.email,...(Array.isArray(u?.identities)?u.identities.map(x=>x?.identity_data?.email):[])].map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
-    if(emails.includes(PRIMARY)) return true;
-    try{const r=await supabaseClient.rpc('biovibe_is_primary_admin');return !r.error&&r.data===true}catch(e){return false}
+    const u=await getUser();
+    const email=String(u?.email||'').trim().toLowerCase();
+    if(email===PRIMARY)return true;
+    try{const r=await supabaseClient.rpc('biovibe_is_primary_admin');return !r.error && r.data===true;}catch(e){return false;}
   }
   async function refresh(){
-    const b=$('bvSuperAdminHeaderBtn'); if(!b)return;
-    const ok=await isPrimary();
-    b.style.display=ok?'inline-block':'none';
+    const b=$('bvSuperAdminHeaderBtn');
+    if(!b)return;
+    b.style.display='none';
+    if(await isPrimary()) b.style.display='inline-block';
   }
   async function open(){
-    if(!(await isPrimary())){alert('این بخش فقط برای ادمین اصلی در دسترس است.');return}
+    if(!(await isPrimary())) return alert('این بخش فقط برای ادمین اصلی در دسترس است.');
     const o=$('bvSuperAdminOverlay');
     if(o){o.style.display='block';o.setAttribute('aria-hidden','false');}
     await load();
   }
-  function close(){const o=$('bvSuperAdminOverlay');if(o){o.style.display='none';o.setAttribute('aria-hidden','true')}}
+  function close(){const o=$('bvSuperAdminOverlay');if(o){o.style.display='none';o.setAttribute('aria-hidden','true');}}
   async function load(){
-    const box=$('bvSuperAdminList');if(!box)return;
+    const box=$('bvSuperAdminList'); if(!box)return;
     box.innerHTML='<div class="bv-sa-note">در حال بارگذاری ادمین‌ها...</div>';
-    let r=await supabaseClient.rpc('biovibe_list_admins');
-    if(r.error) r=await supabaseClient.rpc('list_admins');
-    if(r.error){box.innerHTML='<div class="bv-sa-note">'+esc(r.error.message||'خطا در دریافت ادمین‌ها')+'</div>';return}
+    if(!(await isPrimary())){close();return;}
+    const r=await supabaseClient.rpc('biovibe_list_admins');
+    if(r.error){box.innerHTML='<div class="bv-sa-note">'+esc(r.error.message||'خطا در دریافت ادمین‌ها')+'</div>';return;}
     const rows=Array.isArray(r.data)?r.data:[];
-    box.innerHTML=rows.filter(x=>x.email).map(x=>{
-      const email=String(x.email).trim(),main=email.toLowerCase()===PRIMARY;
-      return `<div class="bv-sa-item"><div class="bv-sa-email"><b>${esc(email)}</b><div class="bv-admin-sub">${esc(x.role||'admin')}${main?' · ادمین اصلی':''}</div></div><div class="bv-sa-actions"><button type="button" class="bv-admin-btn ${main?'bv-admin-muted':'bv-admin-danger'}" ${main?'disabled':''} onclick="BVSuperAdmin.remove(${JSON.stringify(email)})">${main?'ادمین اصلی':'حذف'}</button></div></div>`
-    }).join('')||'<div class="bv-sa-note">ادمین دیگری ثبت نشده است.</div>';
+    box.innerHTML=rows.map(x=>{
+      const email=String(x.email||'').trim();
+      if(!email)return '';
+      const main=email.toLowerCase()===PRIMARY;
+      return '<div class="bv-sa-item"><div class="bv-sa-email"><b>'+esc(email)+'</b><div class="bv-admin-sub">'+esc(x.role||'admin')+(main?' · ادمین اصلی':'')+'</div></div><div class="bv-sa-actions">'+(main?'<button type="button" class="bv-admin-btn bv-admin-muted" disabled>ادمین اصلی</button>':'<button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVSuperAdmin.remove('+JSON.stringify(email)+')">حذف</button>')+'</div></div>';
+    }).join('') || '<div class="bv-sa-note">ادمین دیگری ثبت نشده است.</div>';
   }
   async function add(){
-    if(!(await isPrimary()))return status('این بخش فقط برای ادمین اصلی در دسترس است.',false);
-    const input=$('bvSuperAdminEmail'),email=(input?.value||'').trim().toLowerCase();
+    if(!(await isPrimary()))return alert('فقط ادمین اصلی اجازه این کار را دارد.');
+    const input=$('bvSuperAdminEmail'),email=String(input?.value||'').trim().toLowerCase();
     if(!email)return alert('ایمیل کاربر را وارد کنید.');
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return status('فرمت ایمیل صحیح نیست.',false);
-    status('در حال قرار دادن ادمین...');
-    let r=await supabaseClient.rpc('biovibe_add_admin_by_email',{p_email:email});
-    if(r.error) r=await supabaseClient.rpc('set_admin_by_email',{p_email:email});
+    if(!/^\S+@\S+\.\S+$/.test(email))return status('فرمت ایمیل صحیح نیست.',false);
+    status('در حال افزودن ادمین...');
+    const r=await supabaseClient.rpc('biovibe_add_admin_by_email',{p_email:email});
     if(r.error)return status(r.error.message||'افزودن ادمین انجام نشد.',false);
-    input.value='';status('ادمین با موفقیت اضافه شد.');await load();
+    input.value=''; status('ادمین با موفقیت اضافه شد.'); await load();
   }
   async function remove(email){
-    if(!(await isPrimary()))return status('این بخش فقط برای ادمین اصلی در دسترس است.',false);
+    if(!(await isPrimary()))return alert('فقط ادمین اصلی اجازه این کار را دارد.');
     const clean=String(email||'').trim().toLowerCase();
     if(!clean||clean===PRIMARY)return status('ادمین اصلی قابل حذف نیست.',false);
     if(!confirm('دسترسی ادمین برای «'+clean+'» حذف شود؟'))return;
-    status('در حال حذف...');
-    let r=await supabaseClient.rpc('biovibe_remove_admin_by_email',{p_email:clean});
-    if(r.error) r=await supabaseClient.rpc('remove_admin_by_email',{p_email:clean});
+    status('در حال حذف ادمین...');
+    const r=await supabaseClient.rpc('biovive_remove_admin_by_email',{p_email:clean});
     if(r.error)return status(r.error.message||'حذف ادمین انجام نشد.',false);
-    status('دسترسی ادمین حذف شد.');await load();
+    status('دسترسی ادمین حذف شد.'); await load();
   }
   window.BVSuperAdmin={open,close,add,remove,refresh};
-  supabaseClient.auth.onAuthStateChange(()=>setTimeout(refresh,0));
-  window.addEventListener('load',()=>setTimeout(refresh,0));
-  setTimeout(refresh,0);
-  setTimeout(refresh,500);
-  setTimeout(refresh,1500);
+  if(window.supabaseClient?.auth){
+    supabaseClient.auth.onAuthStateChange(()=>setTimeout(refresh,50));
+  }
+  window.addEventListener('load',()=>setTimeout(refresh,100));
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(refresh,100));
+  setTimeout(refresh,300);
 })();
 </script>
 <script id="biovibe-original-admin-js">
@@ -940,48 +941,14 @@ async function deleteContent(id){if(!(await admin()))return;if(!confirm('این 
 $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addEventListener('change',preview);window.BVOriginalAdmin={open,close,addAdmin,removeAdmin,refresh,publishContent,deleteContent};supabaseClient.auth.onAuthStateChange(()=>{cachedAdminAccess=null;refresh()});supabaseClient.auth.getSession().then(()=>refresh());
 })();
 </script>
-<script id="biovibe-final-init">
-(function(){
-  function sync(){
-    try{window.BVSuperAdmin&&window.BVSuperAdmin.refresh();}catch(e){}
-    try{window.BVOriginalAdmin&&window.BVOriginalAdmin.refresh();}catch(e){}
-  }
-  setTimeout(sync,300);
-  setTimeout(sync,1200);
-})();
-</script>
 
-<script id="biovibe-dom-ready-fix">
-document.addEventListener('DOMContentLoaded',()=>{
-  setTimeout(()=>{try{window.BVSuperAdmin&&window.BVSuperAdmin.refresh();}catch(e){} try{window.BVOriginalAdmin&&window.BVOriginalAdmin.refresh();}catch(e){}},0);
-});
-</script>
 
-<script id="biovibe-primary-admin-final-js">
-(function(){
-  const PRIMARY='ariakangavari8@gmail.com';
-  async function syncPrimary(){
-    const btn=document.getElementById('bvPrimaryAdminLauncher');
-    const head=document.getElementById('bvSuperAdminHeaderBtn');
-    if(!btn)return;
-    let email='';
-    try{
-      const r=await supabaseClient.auth.getUser();
-      email=String(r.data?.user?.email||'').trim().toLowerCase();
-    }catch(e){}
-    const yes=email===PRIMARY.toLowerCase();
-    btn.style.display=yes?'block':'none';
-    if(head)head.style.display=yes?'inline-block':'none';
-  }
-  window.addEventListener('load',syncPrimary);
-  document.addEventListener('DOMContentLoaded',syncPrimary);
-  if(window.supabaseClient?.auth){
-    supabaseClient.auth.onAuthStateChange(()=>setTimeout(syncPrimary,0));
-  }
-  setTimeout(syncPrimary,300);
-  setTimeout(syncPrimary,1000);
-  setTimeout(syncPrimary,2000);
-})();
+
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{window.BVSuperAdmin&&window.BVSuperAdmin.refresh()}catch(e){} try{window.BVOriginalAdmin&&window.BVOriginalAdmin.refresh()}catch(e){}},100);});
 </script>
 </body>
 </html>
