@@ -983,5 +983,105 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   setTimeout(sync,1200);
 })();
 </script>
+
+<style id="biovibe-primary-admin-isolated-css">
+#bvPrimaryAdminNewBtn{display:none;position:fixed;left:18px;top:82px;z-index:10050;border:1px solid rgba(255,143,200,.55);border-radius:999px;padding:10px 16px;cursor:pointer;font-family:Vazirmatn,Tahoma,sans-serif;font-weight:900;background:linear-gradient(90deg,#ff8fc8,#74f2e7);color:#071317;box-shadow:0 8px 26px rgba(0,0,0,.28)}
+#bvPrimaryAdminNewBtn:hover{transform:translateY(-1px)}
+#bvPrimaryAdminNewOverlay{display:none;position:fixed;inset:0;z-index:10060;background:rgba(2,9,11,.95);padding:20px;overflow:auto;backdrop-filter:blur(10px)}
+#bvPrimaryAdminNewPanel{width:min(760px,100%);max-height:calc(100dvh - 40px);margin:20px auto;background:#071b1f;border:1px solid rgba(255,143,200,.48);border-radius:24px;padding:22px;color:#fff;box-shadow:0 22px 80px #000b;font-family:Vazirmatn,Tahoma,sans-serif;overflow:auto}
+#bvPrimaryAdminNewPanel h2,#bvPrimaryAdminNewPanel h3{color:#74f2e7;margin-top:0}
+.bv-pan-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.bv-pan-row input{flex:1;min-width:250px;padding:12px 13px;border-radius:12px;border:1px solid rgba(0,234,255,.3);background:#041316;color:#fff;font-family:inherit}
+.bv-pan-btn{border:0;border-radius:11px;padding:10px 15px;cursor:pointer;font-family:inherit;font-weight:800}
+.bv-pan-add{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#041014}
+.bv-pan-close{background:#16363b;color:#fff}
+.bv-pan-del{background:#7f2338;color:#fff}
+.bv-pan-status{display:none;margin:10px 0;padding:10px 12px;border-radius:10px;background:#0d2b30;border:1px solid rgba(0,234,255,.2);line-height:1.8;overflow-wrap:anywhere}
+.bv-pan-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px;border:1px solid rgba(0,234,255,.17);border-radius:14px;background:rgba(255,255,255,.035);margin:8px 0}
+.bv-pan-email{min-width:0;overflow-wrap:anywhere;word-break:break-word}
+@media(max-width:640px){#bvPrimaryAdminNewBtn{left:10px;top:80px;padding:9px 12px;font-size:12px}#bvPrimaryAdminNewOverlay{padding:10px}#bvPrimaryAdminNewPanel{margin:10px auto;padding:16px}.bv-pan-row input{min-width:0;width:100%}.bv-pan-row .bv-pan-btn{width:100%}.bv-pan-item{align-items:flex-start;flex-direction:column}.bv-pan-item .bv-pan-del{width:100%}}
+</style>
+
+<button id="bvPrimaryAdminNewBtn" type="button" aria-hidden="true">👑 مدیریت ادمین‌ها</button>
+
+<div id="bvPrimaryAdminNewOverlay" aria-hidden="true">
+  <div id="bvPrimaryAdminNewPanel">
+    <div class="bv-pan-row" style="justify-content:space-between">
+      <div><div style="font-size:12px;color:#ff9ac9;font-weight:900">ادمین اصلی</div><h2 style="margin:2px 0">مدیریت ادمین‌ها</h2></div>
+      <button type="button" class="bv-pan-btn bv-pan-close" id="bvPrimaryAdminNewClose">بستن</button>
+    </div>
+    <div id="bvPrimaryAdminNewStatus" class="bv-pan-status"></div>
+    <h3 style="margin-top:18px">ادمین‌های فعلی</h3>
+    <div id="bvPrimaryAdminNewList"><div style="color:#b9d7da">در حال بارگذاری...</div></div>
+    <hr style="border-color:rgba(0,234,255,.14);margin:22px 0">
+    <h3>افزودن ادمین جدید</h3>
+    <p style="color:#b9d7da;font-size:13px;line-height:1.9">ایمیل کاربری را که قبلاً در سایت ثبت‌نام کرده وارد کنید.</p>
+    <div class="bv-pan-row">
+      <input id="bvPrimaryAdminNewEmail" type="email" placeholder="example@email.com" autocomplete="email">
+      <button type="button" class="bv-pan-btn bv-pan-add" id="bvPrimaryAdminNewAdd">افزودن ادمین</button>
+    </div>
+  </div>
+</div>
+
+<script id="biovibe-primary-admin-isolated-js">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const $=id=>document.getElementById(id);
+  const clean=v=>String(v||'').trim().toLowerCase();
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const btn=$('bvPrimaryAdminNewBtn'), overlay=$('bvPrimaryAdminNewOverlay'), close=$('bvPrimaryAdminNewClose'), addBtn=$('bvPrimaryAdminNewAdd'), input=$('bvPrimaryAdminNewEmail'), list=$('bvPrimaryAdminNewList'), statusEl=$('bvPrimaryAdminNewStatus');
+  if(!btn||!overlay||!close||!addBtn||!input||!list)return;
+  function status(t,ok=true){statusEl.style.display='block';statusEl.textContent=t;statusEl.style.borderColor=ok?'rgba(0,234,255,.35)':'rgba(255,80,110,.55)';}
+  async function current(){try{return (await supabaseClient.auth.getSession()).data?.session?.user||null}catch(e){return null}}
+  async function isPrimary(){const u=await current();return !!u && clean(u.email)===PRIMARY}
+  async function sync(){
+    const ok=await isPrimary();
+    btn.style.display=ok?'inline-flex':'none';
+    btn.setAttribute('aria-hidden',ok?'false':'true');
+    if(!ok){overlay.style.display='none';overlay.setAttribute('aria-hidden','true');}
+    return ok;
+  }
+  async function load(){
+    if(!(await isPrimary()))return sync();
+    list.innerHTML='<div style="color:#b9d7da">در حال بارگذاری ادمین‌ها...</div>';
+    let r=await supabaseClient.rpc('biovibe_list_admins');
+    if(r.error){list.innerHTML='<div style="color:#ffb4c6">'+esc(r.error.message||'خطا در دریافت ادمین‌ها')+'</div>';return;}
+    const rows=Array.isArray(r.data)?r.data:[];
+    list.innerHTML=rows.filter(x=>x?.email).map(x=>{
+      const email=clean(x.email), main=email===PRIMARY;
+      return '<div class="bv-pan-item"><div class="bv-pan-email"><b>'+esc(email)+'</b><div style="color:#b9d7da;font-size:12px">'+esc(x.role||'admin')+(main?' · ادمین اصلی':'')+'</div></div>'+ (main?'<button class="bv-pan-btn bv-pan-close" disabled>ادمین اصلی</button>':'<button class="bv-pan-btn bv-pan-del" data-email="'+esc(email)+'">حذف</button>')+'</div>';
+    }).join('') || '<div style="color:#b9d7da">هیچ ادمین دیگری ثبت نشده است.</div>';
+    list.querySelectorAll('[data-email]').forEach(b=>b.addEventListener('click',()=>removeAdmin(b.getAttribute('data-email'))));
+  }
+  async function open(){if(!(await isPrimary())){await sync();return;}overlay.style.display='block';overlay.setAttribute('aria-hidden','false');await load();}
+  function closePanel(){overlay.style.display='none';overlay.setAttribute('aria-hidden','true');}
+  async function addAdmin(){
+    if(!(await isPrimary()))return;
+    const email=clean(input.value);if(!email)return status('ایمیل کاربر را وارد کنید.',false);
+    if(!/^\S+@\S+\.\S+$/.test(email))return status('فرمت ایمیل صحیح نیست.',false);
+    status('در حال افزودن ادمین...');
+    const r=await supabaseClient.rpc('biovibe_add_admin_by_email',{p_email:email});
+    if(r.error)return status(r.error.message||'افزودن ادمین انجام نشد.',false);
+    input.value='';status('ادمین با موفقیت اضافه شد.');await load();
+  }
+  async function removeAdmin(email){
+    if(!(await isPrimary()))return;
+    email=clean(email);if(!email||email===PRIMARY)return status('ادمین اصلی قابل حذف نیست.',false);
+    if(!confirm('دسترسی ادمین برای «'+email+'» حذف شود؟'))return;
+    status('در حال حذف دسترسی...');
+    const r=await supabaseClient.rpc('biovibe_remove_admin_by_email',{p_email:email});
+    if(r.error)return status(r.error.message||'حذف ادمین انجام نشد.',false);
+    status('دسترسی ادمین حذف شد.');await load();
+  }
+  btn.addEventListener('click',open);close.addEventListener('click',closePanel);addBtn.addEventListener('click',addAdmin);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)closePanel()});
+  supabaseClient.auth.onAuthStateChange(()=>setTimeout(sync,100));
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(sync,100));
+  window.addEventListener('load',()=>setTimeout(sync,100));
+  setTimeout(sync,300);setTimeout(sync,1200);setTimeout(sync,2500);
+  window.BVPrimaryAdminPanel={open,close:closePanel,refresh:sync,add:addAdmin,remove:removeAdmin};
+})();
+</script>
+
 </body>
 </html>
