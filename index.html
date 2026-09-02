@@ -259,6 +259,12 @@
     #bvContentModalImages{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}
     #bvContentModalImages img{width:100%;height:190px;object-fit:cover;border-radius:12px}
     @media(max-width:640px){.bv-summary-image{height:170px}.bv-recent-home{padding-left:12px;padding-right:12px}}
+.bv-content-description-input{width:100%;min-height:190px;resize:vertical;line-height:1.9;padding:14px;border-radius:13px;border:1px solid rgba(0,234,255,.22);background:#041316;color:#fff;font-family:inherit;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+.bv-content-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
+.bv-like-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,143,200,.24)!important;background:rgba(255,143,200,.08);color:#ffd1e3;border-radius:11px;padding:8px 11px;font-family:inherit;font-weight:800;cursor:pointer}
+.bv-like-btn.liked{background:rgba(255,143,200,.22);border-color:rgba(255,143,200,.5)!important;color:#fff}
+.bv-like-count{min-width:1.2em;text-align:center}
+
 
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
 
@@ -646,7 +652,9 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
       const imgs=imageUrls(x), first=imgs[0];
       const img=first?`<img class="bv-summary-image" src="${safe(first)}" alt="" loading="lazy" onerror="this.style.display='none'">`:'';
       const link=x.link_url?`<a class="bv-link-btn" href="${safe(x.link_url)}" target="_blank" rel="noopener">لینک</a>`:'';
-      return `<article class="bv-summary-card"><div>${img}</div><h3>${safe(x.title||'بدون عنوان')}</h3><p class="bv-summary-excerpt">${safe(compactText(x.description))}</p><div class="bv-summary-actions"><button type="button" class="bv-more-btn" onclick="openContentDetails('${safe(x.id)}')">ادامه مطلب</button>${link}</div></article>`;
+      const likes=Number(x.like_count||0);
+      const liked=x.liked_by_me?' liked':'';
+      return `<article class="bv-summary-card"><div>${img}</div><h3>${safe(x.title||'بدون عنوان')}</h3><p class="bv-summary-excerpt">${safe(compactText(x.description))}</p><div class="bv-summary-actions"><button type="button" class="bv-more-btn" onclick="openContentDetails('${safe(x.id)}')">ادامه مطلب</button>${link}</div><div class="bv-content-actions"><button type="button" class="bv-like-btn${liked}" onclick="toggleContentLike('${safe(x.id)}',this)" aria-label="لایک"><span aria-hidden="true">♥</span><span class="bv-like-count">${likes}</span></button></div></article>`;
     }
     function renderFullContent(x){
       const imgs=imageUrls(x), files=fileUrls(x);
@@ -663,12 +671,37 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
     }
     function openContentDetails(id){const x=contentStore.get(String(id));if(x)renderFullContent(x)}
     function closeContentModal(){document.getElementById('bvContentModal').style.display='none';document.body.style.overflow=''}
+    async function toggleContentLike(id,btn){
+      if(!supabaseClient?.auth){return;}
+      const {data:{session}}=await supabaseClient.auth.getSession();
+      if(!session){alert('برای لایک کردن ابتدا وارد حساب شوید.');return;}
+      btn.disabled=true;
+      try{
+        const r=await supabaseClient.rpc('biovibe_toggle_content_like',{p_content_id:String(id)});
+        if(r.error)throw r.error;
+        const result=Array.isArray(r.data)?r.data[0]:r.data;
+        const count=Number(result?.like_count ?? result?.count ?? 0);
+        const liked=!!(result?.liked ?? result?.is_liked);
+        btn.classList.toggle('liked',liked);
+        const c=btn.querySelector('.bv-like-count'); if(c)c.textContent=String(count);
+        const x=contentStore.get(String(id)); if(x){x.like_count=count;x.liked_by_me=liked;}
+      }catch(e){console.error(e);alert('لایک انجام نشد: '+(e.message||e));}
+      finally{btn.disabled=false;}
+    }
+
     async function loadContent(){
       const c={news:document.getElementById('news-container'),journal:document.getElementById('journal-container'),lab:document.getElementById('lab-container'),media:document.getElementById('media-container'),company:document.getElementById('company-container'),recent:document.getElementById('recent-home-container'),recentWrap:document.getElementById('bvRecentHome')};
       try{
         const r=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(200);
         if(r.error)throw r.error;
-        const rows=r.data||[]; contentStore.clear(); rows.forEach(x=>contentStore.set(String(x.id),x));
+        const rows=r.data||[];
+        try{
+          const lr=await supabaseClient.rpc('biovibe_content_like_state',{p_content_ids:rows.map(x=>String(x.id))});
+          const states=lr.error?[]:(Array.isArray(lr.data)?lr.data:[]);
+          const byId=new Map(states.map(v=>[String(v.content_id),v]));
+          rows.forEach(x=>{const st=byId.get(String(x.id));x.like_count=Number(st?.like_count||0);x.liked_by_me=!!st?.liked;});
+        }catch(e){rows.forEach(x=>{x.like_count=Number(x.like_count||0);x.liked_by_me=false;});}
+        contentStore.clear(); rows.forEach(x=>contentStore.set(String(x.id),x));
         const draw=a=>a.length?a.map(renderSummaryContent).join(''):'<div class="bv-empty">هنوز محتوایی قرار نگرفته است.</div>';
         c.news.innerHTML=draw(rows.filter(x=>x.section==='Bio-News')); c.journal.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Journal Club'||x.section==='Bio-Journal Club')); c.lab.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Lab'||x.section==='Bio-Lab')); c.media.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Media'||x.section==='Bio-Media')); c.company.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Company'||x.section==='Bio-Company'));
         const cut=Date.now()-14*60*60*1000;
@@ -739,7 +772,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 <div class="bv-admin-row" style="justify-content:space-between"><h2>⚙️ پنل مدیریت BioVibe</h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVOriginalAdmin.close()">بستن</button></div>
 <div id="bvAdminStatus" class="bv-admin-status"></div>
 <hr style="border-color:rgba(0,234,255,.14);margin:22px 0">
-<section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" rows="5" placeholder="توضیحات"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
+<section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" class="bv-content-description-input" rows="9" placeholder="توضیحات کامل محتوا را اینجا بنویسید"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
 </div></div>
 
 <script id="biovibe-superadmin-js">
