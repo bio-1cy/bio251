@@ -246,7 +246,7 @@
     .bv-recent-home h2{margin:0 0 18px}
     .bv-recent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;text-align:right}
     .bv-summary-card{background:rgba(255,255,255,.045);border:1px solid rgba(0,234,255,.16);border-radius:18px;padding:14px;box-shadow:0 8px 26px rgba(0,0,0,.14);overflow:hidden;min-width:0;width:100%;max-width:720px;margin-left:auto;margin-right:auto;}
-    .bv-summary-image{width:100%;height:190px;object-fit:cover;border-radius:13px;background:#061417;display:block;margin-bottom:12px}
+    .bv-summary-image{width:100%;height:auto;max-height:520px;object-fit:contain;border-radius:13px;background:#061417;display:block;margin-bottom:12px}
     .bv-summary-card h3{font-size:18px;line-height:1.55;margin:4px 0 8px}
     .bv-summary-excerpt{color:#d8ecee;line-height:1.9;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:5.7em;overflow-wrap:anywhere;word-break:break-word;}
     .bv-summary-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
@@ -257,8 +257,8 @@
     #bvContentModal{display:none;position:fixed;inset:0;z-index:10000;background:rgba(2,9,11,.92);padding:18px;overflow:auto;backdrop-filter:blur(8px)}
     #bvContentModalInner{max-width:820px;margin:25px auto;background:#071b1f;border:1px solid rgba(0,234,255,.28);border-radius:22px;padding:20px;color:#fff;overflow-wrap:anywhere;word-break:break-word}
     #bvContentModalImages{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:12px 0}
-    #bvContentModalImages img{width:100%;height:190px;object-fit:cover;border-radius:12px}
-    @media(max-width:640px){.bv-summary-image{height:170px}.bv-recent-home{padding-left:12px;padding-right:12px}}
+    #bvContentModalImages img{width:100%;height:auto;max-height:75vh;object-fit:contain;border-radius:12px;background:#061417;display:block}
+    @media(max-width:640px){.bv-summary-image{max-height:420px}.bv-recent-home{padding-left:12px;padding-right:12px}}
 .bv-content-description-input{width:100%;min-height:190px;resize:vertical;line-height:1.9;padding:14px;border-radius:13px;border:1px solid rgba(0,234,255,.22);background:#041316;color:#fff;font-family:inherit;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
 .bv-content-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
 .bv-like-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,143,200,.24)!important;background:rgba(255,143,200,.08);color:#ffd1e3;border-radius:11px;padding:8px 11px;font-family:inherit;font-weight:800;cursor:pointer}
@@ -360,7 +360,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 
 
 <style id="biovibe-primary-admin-final">
-#bvPrimaryAdminLauncher{display:none;position:fixed;right:18px;bottom:18px;z-index:10001;border:0;border-radius:999px;padding:12px 18px;background:linear-gradient(90deg,#ff8fc8,#00eaff);color:#071317;font-family:Vazirmatn,Tahoma,sans-serif;font-weight:900;cursor:pointer;box-shadow:0 10px 35px #000b;}
+#bvPrimaryAdminLauncher{display:none!important;position:fixed;right:18px;bottom:18px;z-index:10001;border:0;border-radius:999px;padding:12px 18px;background:linear-gradient(90deg,#ff8fc8,#00eaff);color:#071317;font-family:Vazirmatn,Tahoma,sans-serif;font-weight:900;cursor:pointer;box-shadow:0 10px 35px #000b;}
 #bvPrimaryAdminLauncher:hover{transform:translateY(-1px)}
 @media(max-width:640px){#bvPrimaryAdminLauncher{right:12px;bottom:12px;padding:11px 14px;font-size:12px}}
 </style>
@@ -418,7 +418,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         <div class="logo-fa">بایو وایب</div>
         <div style="display:flex;gap:8px;align-items:center">
             <button id="bvAdminHeaderBtn" type="button" onclick="BVOriginalAdmin.open()">پنل مدیریت</button>
-            <button id="bvSuperAdminHeaderBtn" type="button" onclick="BVPrimaryAdmin.open()">مدیریت ادمین‌ها</button>
+            <button id="bvSuperAdminHeaderBtn" type="button" onclick="BVSuperAdmin.open()">مدیریت ادمین‌ها</button>
             <button class="logout-btn" onclick="logout()">خروج</button>
         </div>
     </header>
@@ -612,7 +612,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         try{ await supabaseClient.auth.signOut({scope:'global'}); }catch(e){ console.error(e); }
         document.getElementById('mainSite').style.display='none';
         document.getElementById('loginPage').style.display='flex';
-        const b=document.getElementById('bvAdminBtn'); if(b)b.style.display='none'; const hb=document.getElementById('bvAdminHeaderBtn'); if(hb)hb.style.display='none';
+        const b=document.getElementById('bvAdminBtn'); if(b)b.style.display='none'; const hb=document.getElementById('bvAdminHeaderBtn'); if(hb)hb.style.display='none'; const sb=document.getElementById('bvSuperAdminHeaderBtn'); if(sb)sb.style.setProperty('display','none','important'); const sl=document.getElementById('bvPrimaryAdminLauncher'); if(sl)sl.style.setProperty('display','none','important');
         const o=document.getElementById('bvAdminOverlay'); if(o)o.style.display='none';
         const u=document.getElementById('user'), pw=document.getElementById('pass');
         if(u)u.value=''; if(pw)pw.value=''; cachedAdminAccess=null;
@@ -748,6 +748,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
   <div id="bvContentModalImages"></div><div id="bvContentModalBody" class="bv-content-full"></div><div id="bvContentModalFiles" style="margin-top:14px"></div><div id="bvContentModalLink" style="margin-top:14px"></div>
 </div></div>
 <button id="bvAdminBtn" type="button" onclick="BVOriginalAdmin.open()">⚙️ پنل مدیریت</button>
+<button id="bvPrimaryAdminLauncher" type="button" onclick="BVSuperAdmin.open()">👑 مدیریت ادمین‌ها</button>
 
 <div id="bvSuperAdminOverlay" aria-hidden="true">
   <div id="bvSuperAdminPanel">
@@ -950,49 +951,36 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
 <script>
 document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){try{window.BVSuperAdmin&&window.BVSuperAdmin.refresh()}catch(e){} try{window.BVOriginalAdmin&&window.BVOriginalAdmin.refresh()}catch(e){}},100);});
 </script>
-<script id="biovibe-primary-admin-final-fix">
+
+<script id="biovibe-primary-admin-final-controller">
 (function(){
-  const PRIMARY='ariakangavari8@gmail.com'.trim().toLowerCase();
-  const btn=()=>document.getElementById('bvSuperAdminHeaderBtn');
-  async function getUser(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  async function primary(){
     try{
-      const r=await supabaseClient.auth.getSession();
-      return r?.data?.session?.user||null;
-    }catch(e){
-      try{return (await supabaseClient.auth.getUser()).data?.user||null}catch(_){return null}
-    }
+      const {data:{session}}=await supabaseClient.auth.getSession();
+      const u=session?.user;
+      if(!u) return false;
+      const emails=[u.email,u.user_metadata?.email,...(Array.isArray(u.identities)?u.identities.map(x=>x?.identity_data?.email):[])].map(norm);
+      if(emails.includes(PRIMARY)) return true;
+      const r=await supabaseClient.rpc('biovibe_is_primary_admin');
+      return !r.error && r.data===true;
+    }catch(e){return false}
   }
-  function emailMatches(u){
-    const emails=[
-      u?.email,
-      u?.user_metadata?.email,
-      ...(Array.isArray(u?.identities)?u.identities.map(x=>x?.identity_data?.email):[])
-    ].map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
-    return emails.includes(PRIMARY);
+  async function sync(){
+    const header=document.getElementById('bvSuperAdminHeaderBtn');
+    const launcher=document.getElementById('bvPrimaryAdminLauncher');
+    const ok=await primary();
+    if(header) header.style.setProperty('display',ok?'inline-block':'none','important');
+    if(launcher) launcher.style.setProperty('display',ok?'block':'none','important');
   }
-  async function refresh(){
-    const b=btn(); if(!b)return;
-    const u=await getUser();
-    b.style.display=(u && emailMatches(u))?'inline-block':'none';
-  }
-  async function open(){
-    const u=await getUser();
-    if(!u || !emailMatches(u)){
-      alert('این پنل فقط برای ادمین اصلی در دسترس است.');
-      return;
-    }
-    const o=document.getElementById('bvSuperAdminOverlay');
-    if(o){o.style.display='block';o.setAttribute('aria-hidden','false');}
-    if(window.BVSuperAdmin?.load) await window.BVSuperAdmin.load();
-    else if(window.BVSuperAdmin?.open) await window.BVSuperAdmin.open();
-  }
-  window.BVPrimaryAdmin={open,refresh};
-  async function boot(){await refresh();setTimeout(refresh,300);setTimeout(refresh,1000);setTimeout(refresh,2500);}
+  window.BVPrimaryAdminFinal={sync,primary};
   if(window.supabaseClient?.auth){
-    supabaseClient.auth.onAuthStateChange(function(){setTimeout(refresh,0);setTimeout(refresh,250);});
+    supabaseClient.auth.onAuthStateChange(()=>setTimeout(sync,120));
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
-  setInterval(refresh,3000);
+  window.addEventListener('load',()=>{sync();setTimeout(sync,500);setTimeout(sync,1500);setTimeout(sync,3000);});
+  setTimeout(sync,100);
+  setInterval(sync,5000);
 })();
 </script>
 </body>
