@@ -702,26 +702,26 @@ async function admin(){
 let cachedAdminAccess=null;
 async function refresh(){
   const hb=$('bvAdminHeaderBtn'), sb=$('bvSuperAdminBtn');
+  if(hb)hb.style.display='none';
+  if(sb)sb.style.display='none';
+  cachedAdminAccess=false;
   try{
-    const u=await getSessionUser();
-    if(!u){if(hb)hb.style.display='none';if(sb)sb.style.display='none';cachedAdminAccess=false;return;}
+    const {data:{session}}=await supabaseClient.auth.getSession();
+    const u=session?.user;
+    if(!u)return;
     const email=String(u.email||'').trim().toLowerCase();
-    const isPrimary=email===PRIMARY;
-    if(isPrimary){
+    if(email===PRIMARY){
       cachedAdminAccess=true;
       if(hb)hb.style.display='inline-block';
       if(sb)sb.style.display='inline-block';
       return;
     }
-    cachedAdminAccess=null;
-    let isAdm=false;
-    try{const r=await supabaseClient.rpc('biovibe_admin_access');isAdm=!r.error&&r.data===true;}catch(e){isAdm=false}
-    cachedAdminAccess=isAdm;
-    if(hb)hb.style.display=isAdm?'inline-block':'none';
-    if(sb)sb.style.display='none';
-  }catch(e){
-    if(hb)hb.style.display='none'; if(sb)sb.style.display='none';
-  }
+    try{
+      const r=await supabaseClient.rpc('biovibe_admin_access');
+      cachedAdminAccess=!r.error&&r.data===true;
+    }catch(e){cachedAdminAccess=false}
+    if(hb)hb.style.display=cachedAdminAccess?'inline-block':'none';
+  }catch(e){}
 }
 async function open(){
   if(!(await admin())){alert('دسترسی ادمین ندارید.');return}
@@ -735,7 +735,9 @@ async function open(){
 }
 function close(){$('bvAdminOverlay').style.display='none'}
 async function openSuperAdmin(){
-  if(!(await primary())){alert('این بخش فقط برای ادمین اصلی در دسترس است.');return}
+  const {data:{session}}=await supabaseClient.auth.getSession();
+  const email=String(session?.user?.email||'').trim().toLowerCase();
+  if(email!==PRIMARY){alert('این بخش فقط برای ادمین اصلی در دسترس است.');return}
   $('bvSuperAdminOverlay').style.display='block';
   await loadSuperAdmins();
 }
@@ -779,7 +781,7 @@ async function put(bucket,file,prefix){const ext=(file.name.split('.').pop()||'b
 async function publishContent(){if(!(await admin()))return msg('دسترسی ادمین ندارید.',false);const title=$('bvContentTitle').value.trim();if(!title)return alert('عنوان محتوا را وارد کنید.');const imgs=[...$('bvContentImages').files],files=[...$('bvContentFiles').files];if(imgs.some(f=>f.size>8*1024*1024))return msg('هر تصویر باید حداکثر 8MB باشد.',false);if(files.some(f=>f.size>20*1024*1024))return msg('هر فایل باید حداکثر 20MB باشد.',false);try{msg('در حال آپلود و انتشار...');const image_urls=[];for(const f of imgs)image_urls.push((await put(IMAGE_BUCKET,f,'content')).url);const attachment_urls=[];for(const f of files)attachment_urls.push(await put(FILE_BUCKET,f,'content-files'));const payload={section:$('bvContentSection').value,title,description:$('bvContentDescription').value.trim(),image_url:image_urls[0]||null,image_urls,attachment_urls,link_url:$('bvContentLink').value.trim()||null};const r=await supabaseClient.from('contents').insert(payload);if(r.error)throw r.error;$('bvContentTitle').value='';$('bvContentDescription').value='';$('bvContentLink').value='';$('bvContentImages').value='';$('bvContentFiles').value='';preview();msg('محتوا با موفقیت منتشر شد.');await loadContents();if(typeof loadContent==='function')await loadContent()}catch(e){msg(e.message||'انتشار ناموفق بود.',false)}}
 async function loadContents(){const b=$('bvContentList'),r=await supabaseClient.from('contents').select('id,title,section,created_at').order('created_at',{ascending:false}).limit(50);if(r.error){b.innerHTML='<p>'+esc(r.error.message)+'</p>';return}b.innerHTML='<h4>📚 محتواهای منتشرشده</h4>'+((r.data||[]).map(x=>`<div class="bv-admin-item"><div><b>${esc(x.title)}</b><div class="bv-admin-sub">${esc(x.section)}</div></div><button class="bv-admin-btn bv-admin-danger" onclick="BVOriginalAdmin.deleteContent('${x.id}')">حذف</button></div>`).join('')||'<p>هنوز محتوایی ثبت نشده است.</p>')}
 async function deleteContent(id){if(!(await admin()))return;if(!confirm('این محتوا حذف شود؟'))return;const r=await supabaseClient.from('contents').delete().eq('id',id);if(r.error)return msg(r.error.message,false);msg('محتوا حذف شد.');await loadContents();if(typeof loadContent==='function')await loadContent()}
-$('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addEventListener('change',preview);window.BVOriginalAdmin={open,close,openSuperAdmin,closeSuperAdmin,addSuperAdmin,removeSuperAdmin,addAdmin,removeAdmin,refresh,publishContent,deleteContent};supabaseClient.auth.onAuthStateChange(()=>{cachedAdminAccess=null;refresh()});refresh()
+$('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addEventListener('change',preview);window.BVOriginalAdmin={open,close,openSuperAdmin,closeSuperAdmin,addSuperAdmin,removeSuperAdmin,addAdmin,removeAdmin,refresh,publishContent,deleteContent};supabaseClient.auth.onAuthStateChange(()=>{cachedAdminAccess=null;refresh()});supabaseClient.auth.getSession().then(()=>refresh());
 })();
 </script>\n</body>
 </html>
