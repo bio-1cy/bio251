@@ -280,6 +280,14 @@
 .bv-admin-item{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;border:1px solid rgba(0,234,255,.16);border-radius:12px;background:rgba(255,255,255,.035);margin:8px 0}
 .bv-admin-sub{font-size:12px;color:#b9d7da;opacity:.9}
 @media(max-width:640px){#bvAdminOverlay{padding:10px}#bvAdminPanel{margin:10px auto;padding:16px}.bv-admin-row input{min-width:0;width:100%}}
+
+.bv-superadmin-banner{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(0,234,255,.10),rgba(255,143,200,.10));border:1px solid rgba(255,143,200,.35);box-shadow:0 10px 30px rgba(0,0,0,.16);}
+.bv-superadmin-kicker{font-size:11px;color:#ff9ac9;font-weight:800;letter-spacing:.4px;margin-bottom:2px}
+.bv-superadmin-badge{white-space:nowrap;padding:7px 11px;border-radius:999px;border:1px solid rgba(0,234,255,.28);background:rgba(0,234,255,.08);font-size:12px;font-weight:800;color:#74f2e7}
+.bv-admin-addbox{margin-top:16px;padding:14px;border:1px solid rgba(0,234,255,.16);border-radius:14px;background:rgba(255,255,255,.025)}
+.bv-admin-item{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;border:1px solid rgba(0,234,255,.16);border-radius:12px;background:rgba(255,255,255,.035);margin:8px 0;word-break:break-word}
+.bv-admin-item > div{min-width:0}
+@media(max-width:640px){.bv-superadmin-banner{align-items:flex-start;flex-direction:column}.bv-admin-addbox .bv-admin-row{display:flex;flex-direction:column;align-items:stretch}.bv-admin-addbox .bv-admin-row input,.bv-admin-addbox .bv-admin-row button{width:100%}}
 </style>
 
 </head>
@@ -623,14 +631,17 @@
 <div id="bvAdminOverlay" aria-hidden="true"><div id="bvAdminPanel">
 <div class="bv-admin-row" style="justify-content:space-between"><h2>⚙️ پنل مدیریت BioVibe</h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVOriginalAdmin.close()">بستن</button></div>
 <div id="bvAdminStatus" class="bv-admin-status"></div>
-<section id="bvAdminUsersSection" data-primary-only="true">
-<h3>مدیریت ادمین‌ها</h3>
-<div class="bv-admin-sub" style="margin:0 0 10px">لیست ادمین‌های فعلی:</div>
+<section id="bvAdminUsersSection" data-primary-only="true" style="display:none;">
+<div class="bv-superadmin-banner">
+  <div><div class="bv-superadmin-kicker">دسترسی ویژه</div><h3 style="margin:2px 0 0">مدیریت ادمین‌ها</h3></div>
+  <div class="bv-superadmin-badge">ادمین اصلی</div>
+</div>
+<div class="bv-admin-sub" style="margin:12px 0 10px">ادمین‌های فعلی</div>
 <div id="bvAdminList"></div>
-<div class="bv-admin-addbox" style="margin-top:16px;padding:14px;border:1px solid rgba(0,234,255,.16);border-radius:14px;background:rgba(255,255,255,.025)">
-  <div class="bv-admin-sub" style="margin-bottom:8px">افزودن ادمین جدید با ایمیل</div>
+<div class="bv-admin-addbox">
+  <div class="bv-admin-sub" style="margin-bottom:8px">افزودن کاربر به‌عنوان ادمین</div>
   <div id="bvAdminManageControls" class="bv-admin-row" style="margin:0">
-    <input id="bvAdminEmail" type="email" placeholder="ایمیل کاربر" autocomplete="email">
+    <input id="bvAdminEmail" type="email" placeholder="ایمیل کاربر را وارد کنید" autocomplete="email">
     <button class="bv-admin-btn bv-admin-primary" type="button" onclick="BVOriginalAdmin.addAdmin()">قرار دادن ادمین</button>
   </div>
 </div>
@@ -687,12 +698,15 @@ async function refresh(){
 }
 async function open(){
   if(!(await admin())){alert('دسترسی ادمین ندارید.');return}
-  $('bvAdminOverlay').style.display='block';
+  const overlay=$('bvAdminOverlay');
+  if(overlay) overlay.style.display='block';
   const isPrimary=await primary();
   const section=$('bvAdminUsersSection');
   const controls=$('bvAdminManageControls');
+  const separator=section ? section.nextElementSibling : null;
   if(section) section.style.display=isPrimary?'block':'none';
   if(controls) controls.style.display=isPrimary?'flex':'none';
+  if(separator) separator.style.display=isPrimary?'block':'none';
   if(isPrimary) await loadAdmins();
   await loadContents();
 }
