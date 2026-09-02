@@ -382,7 +382,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 @media(max-width:640px){#bvTruePrimaryAdminOverlay{padding:10px;}#bvTruePrimaryAdminPanel{max-height:calc(100dvh - 20px);padding:15px;border-radius:18px;}.bvTrueAdminRow input,.bvTrueAdminRow button{width:100%;min-width:0;flex:1 1 100%;}.bvTrueAdminItem{align-items:stretch;flex-direction:column;}.bvTrueAdminItem button{width:100%;}}
 </style>
 <style id="bv-final-user-fix">
-#bvAdminHeaderBtn,#bvTruePrimaryAdminBtn,#bvSuperAdminHeaderBtn,#bvTruePrimaryAdminLauncher{display:none!important}
+#bvSuperAdminHeaderBtn,#bvTruePrimaryAdminBtn,#bvTruePrimaryAdminLauncher,#bvPrimaryAdminSection{display:none!important}
 #bvAdminManagerBtn{display:none;position:relative;border:0;border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;font-weight:900;background:linear-gradient(90deg,#ff8fc8,#00eaff);color:#071317;box-shadow:0 0 18px rgba(255,143,200,.18)}
 #bvAdminManagerOverlay{display:none;position:fixed;inset:0;z-index:12000;background:rgba(2,9,11,.96);padding:18px;overflow:auto;backdrop-filter:blur(10px)}
 #bvAdminManagerPanel{width:min(760px,100%);max-height:calc(100dvh - 36px);overflow:auto;margin:0 auto;background:#071b1f;border:1px solid rgba(255,143,200,.48);border-radius:22px;padding:20px;box-shadow:0 22px 80px #000b;color:#fff;font-family:Vazirmatn,Tahoma,sans-serif}
@@ -390,6 +390,17 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 .bv-am-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.bv-am-row input{flex:1;min-width:240px;padding:11px 12px;border-radius:11px;border:1px solid rgba(0,234,255,.3);background:#041316;color:#fff;font-family:inherit}.bv-am-btn{border:0;border-radius:11px;padding:10px 15px;cursor:pointer;font-family:inherit;font-weight:800}.bv-am-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#041014}.bv-am-danger{background:#7f2338;color:#fff}.bv-am-muted{background:#16363b;color:#fff}.bv-am-status{display:none;margin:10px 0;padding:10px;border-radius:10px;background:#0d2b30;border:1px solid rgba(0,234,255,.2);line-height:1.8}.bv-am-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px;border:1px solid rgba(0,234,255,.16);border-radius:13px;background:rgba(255,255,255,.035);margin:8px 0}.bv-am-email{min-width:0;overflow-wrap:anywhere;word-break:break-word}
 .bv-section-badge{display:inline-flex;align-items:center;gap:6px;margin:2px 0 9px;padding:4px 9px;border-radius:999px;border:1px solid rgba(0,234,255,.26);background:rgba(0,234,255,.08);color:#74f2e7;font-size:11px;font-weight:800}.bv-new-dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:#21f3df;box-shadow:0 0 10px rgba(33,243,223,.95)}#bvDashboardDot{display:none;width:8px;height:8px;border-radius:50%;background:#21f3df;box-shadow:0 0 10px rgba(33,243,223,.95);margin-right:4px;vertical-align:middle}.bv-menu-notify{display:inline-block;width:8px;height:8px;border-radius:50%;background:#21f3df;box-shadow:0 0 10px rgba(33,243,223,.95);margin-right:6px;vertical-align:middle}
 @media(max-width:640px){#bvAdminManagerOverlay{padding:10px}#bvAdminManagerPanel{max-height:calc(100dvh - 20px);padding:15px}.bv-am-row input,.bv-am-row button{width:100%;min-width:0;flex:1 1 100%}.bv-am-item{align-items:stretch;flex-direction:column}.bv-am-item button{width:100%}}
+</style>
+
+<style id="biovibe-two-panels-final-css">
+#bvAdminHeaderBtn, #bvAdminManagerBtn {
+  visibility:visible;
+}
+#bvAdminHeaderBtn[style*="inline-block"], #bvAdminManagerBtn[style*="inline-block"] {
+  display:inline-flex !important;
+  align-items:center;
+  justify-content:center;
+}
 </style>
 </head>
 
@@ -1200,6 +1211,41 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   document.addEventListener('DOMContentLoaded',sync);
   window.addEventListener('load',sync);
   setTimeout(sync,300); setTimeout(sync,1500);
+})();
+</script>
+
+<script id="biovibe-two-panels-final-guard">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  const $=id=>document.getElementById(id);
+  async function sync(){
+    try{
+      const r=await supabaseClient.auth.getSession();
+      const u=r?.data?.session?.user;
+      const email=norm(u?.email || u?.user_metadata?.email || window.BVLoggedInEmail || '');
+      const primary=email===PRIMARY;
+      const manager=$('bvAdminManagerBtn');
+      if(manager) manager.style.setProperty('display', primary ? 'inline-flex' : 'none','important');
+      const adminBtn=$('bvAdminHeaderBtn');
+      if(adminBtn){
+        let isAdmin=primary;
+        if(!isAdmin){
+          try{ const q=await supabaseClient.rpc('biovibe_admin_access'); isAdmin=!q.error&&q.data===true; }catch(e){ isAdmin=false; }
+        }
+        adminBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none','important');
+      }
+      const old=$('bvSuperAdminHeaderBtn'); if(old) old.style.setProperty('display','none','important');
+      const old2=$('bvTruePrimaryAdminBtn'); if(old2) old2.style.setProperty('display','none','important');
+    }catch(e){
+      const m=$('bvAdminManagerBtn'); if(m)m.style.setProperty('display','none','important');
+      const a=$('bvAdminHeaderBtn'); if(a)a.style.setProperty('display','none','important');
+    }
+  }
+  if(window.supabaseClient?.auth) supabaseClient.auth.onAuthStateChange(()=>setTimeout(sync,50));
+  document.addEventListener('DOMContentLoaded',sync);
+  window.addEventListener('load',sync);
+  setTimeout(sync,300); setTimeout(sync,1200); setTimeout(sync,2500);
 })();
 </script>
 </body>
