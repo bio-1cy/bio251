@@ -267,6 +267,9 @@
 #bvAdminUsersSection{margin-bottom:8px;padding:16px;border:1px solid rgba(255,143,200,.28);border-radius:16px;background:linear-gradient(180deg,rgba(255,143,200,.06),rgba(0,234,255,.03));}
 .bv-admin-addbox{margin-top:14px;padding:14px;border-radius:14px;border:1px dashed rgba(0,234,255,.26);background:rgba(255,255,255,.025)}
 <style id="biovibe-admin-original-css">
+
+#bvAdminHeaderBtn{display:none;border:0;border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--pink));color:#061317;box-shadow:0 0 18px rgba(255,143,200,.12)}
+#bvAdminHeaderBtn:hover{transform:translateY(-1px)}
 #bvAdminBtn{display:none;position:fixed;left:18px;bottom:18px;z-index:9998;border:0;border-radius:999px;padding:11px 17px;background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#071b1f;font-weight:800;cursor:pointer;box-shadow:0 8px 28px #0009;font-family:Vazirmatn,sans-serif}
 #bvAdminOverlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(2,9,11,.92);padding:24px;overflow:auto;backdrop-filter:blur(8px)}
 #bvAdminPanel{max-width:760px;margin:25px auto;background:#071b1f;border:1px solid rgba(0,234,255,.35);border-radius:22px;padding:22px;color:#fff;box-shadow:0 20px 70px #000a;font-family:Vazirmatn,Tahoma,sans-serif}
@@ -463,6 +466,7 @@
 
             document.getElementById('loginPage').style.display = "none";
             document.getElementById('mainSite').style.display = "block";
+            if (window.BVOriginalAdmin?.refresh) window.BVOriginalAdmin.refresh();
 
         } else if (currentMode === 'register') {
             if (!u || !email || !p) {
@@ -500,6 +504,7 @@
                 alert("ثبت‌نام با موفقیت انجام شد.");
                 document.getElementById('loginPage').style.display = "none";
                 document.getElementById('mainSite').style.display = "block";
+                if (window.BVOriginalAdmin?.refresh) window.BVOriginalAdmin.refresh();
             } else {
                 alert("ثبت‌نام انجام شد. اگر تأیید ایمیل فعال باشد، ایمیل تأیید برای شما ارسال می‌شود.");
                 switchMode('login');
@@ -692,8 +697,12 @@ async function refresh(){
     const {data:{session}}=await supabaseClient.auth.getSession();
     const u=session?.user;
     if(!u)return;
-    const email=String(u.email||'').trim().toLowerCase();
-    if(email===PRIMARY){ cachedAdminAccess=true; if(hb) hb.style.display='inline-block'; return; }
+    const emails=[u.email,u.user_metadata?.email,...(Array.isArray(u.identities)?u.identities.map(x=>x?.identity_data?.email):[])].map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
+    if(emails.includes(PRIMARY)){
+      cachedAdminAccess=true;
+      if(hb) hb.style.display='inline-block';
+      return;
+    }
     try{const r=await supabaseClient.rpc('biovibe_admin_access');cachedAdminAccess=!r.error&&r.data===true;}catch(e){cachedAdminAccess=false}
     if(hb) hb.style.display=cachedAdminAccess?'inline-block':'none';
   }catch(e){console.error(e)}
