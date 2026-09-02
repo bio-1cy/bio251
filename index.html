@@ -649,7 +649,18 @@ async function getSessionUser(){try{return (await supabaseClient.auth.getSession
 async function user(){return (await getSessionUser()) || (await supabaseClient.auth.getUser()).data?.user || null}
 async function primary(){
   const u=await getSessionUser();
-  return !!u && String(u.email||'').trim().toLowerCase()===PRIMARY;
+  if(!u) return false;
+  const emails=[
+    u.email,
+    u.user_metadata?.email,
+    u.identities?.[0]?.identity_data?.email
+  ].map(v=>String(v||'').trim().toLowerCase()).filter(Boolean);
+  if(emails.includes(PRIMARY)) return true;
+  try{
+    const r=await supabaseClient.rpc('biovibe_is_primary_admin');
+    if(!r.error && r.data===true) return true;
+  }catch(e){}
+  return false;
 }
 async function admin(){
   const u=await getSessionUser();
