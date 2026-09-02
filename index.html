@@ -623,7 +623,7 @@
 <div id="bvAdminOverlay" aria-hidden="true"><div id="bvAdminPanel">
 <div class="bv-admin-row" style="justify-content:space-between"><h2>⚙️ پنل مدیریت BioVibe</h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVOriginalAdmin.close()">بستن</button></div>
 <div id="bvAdminStatus" class="bv-admin-status"></div>
-<section id="bvAdminUsersSection">
+<section id="bvAdminUsersSection" data-primary-only="true">
 <h3>مدیریت ادمین‌ها</h3>
 <div class="bv-admin-sub" style="margin:0 0 10px">لیست ادمین‌های فعلی:</div>
 <div id="bvAdminList"></div>
@@ -645,18 +645,28 @@
 const PRIMARY='ariakangavari8@gmail.com'.toLowerCase(),IMAGE_BUCKET='biovibe-images',FILE_BUCKET='biovibe-files',$=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
 function msg(t,ok=true){const e=$('bvAdminStatus');e.style.display='block';e.textContent=t;e.style.borderColor=ok?'rgba(0,234,255,.35)':'rgba(255,80,110,.5)'}
-async function user(){return (await supabaseClient.auth.getUser()).data?.user||null}
-async function primary(){const u=await user();if(!u)return false;if(String(u.email||'').trim().toLowerCase()===PRIMARY)return true;try{const r=await supabaseClient.rpc('biovibe_is_primary_admin');if(!r.error&&r.data===true)return true}catch(e){}return false}
-async function admin(){const u=await user();if(!u)return false;if(String(u.email||'').trim().toLowerCase()===PRIMARY)return true;if(cachedAdminAccess===true)return true;const r=await supabaseClient.rpc('biovibe_admin_access');cachedAdminAccess=!r.error&&r.data===true;return cachedAdminAccess}
+async function getSessionUser(){try{return (await supabaseClient.auth.getSession()).data.session?.user||null}catch(e){return null}}
+async function user(){return (await getSessionUser()) || (await supabaseClient.auth.getUser()).data?.user || null}
+async function primary(){
+  const u=await getSessionUser();
+  return !!u && String(u.email||'').trim().toLowerCase()===PRIMARY;
+}
+async function admin(){
+  const u=await getSessionUser();
+  if(!u)return false;
+  if(String(u.email||'').trim().toLowerCase()===PRIMARY)return true;
+  if(cachedAdminAccess===true)return true;
+  try{const r=await supabaseClient.rpc('biovibe_admin_access');cachedAdminAccess=!r.error&&r.data===true;}catch(e){cachedAdminAccess=false}
+  return cachedAdminAccess;
+}
 let cachedAdminAccess=null;
 async function refresh(){
-  const b=$('bvAdminBtn'), hb=$('bvAdminHeaderBtn');
-  if(b)b.style.display='none';
+  const hb=$('bvAdminHeaderBtn');
   if(!hb)return;
   try{
-    const {data:{session}}=await supabaseClient.auth.getSession();
-    if(!session){hb.style.display='none';cachedAdminAccess=false;return;}
-    const email=String(session.user?.email||'').trim().toLowerCase();
+    const u=await getSessionUser();
+    if(!u){hb.style.display='none';cachedAdminAccess=false;return;}
+    const email=String(u.email||'').trim().toLowerCase();
     if(email===PRIMARY){cachedAdminAccess=true;hb.style.display='inline-block';return;}
     if(cachedAdminAccess!==null){hb.style.display=cachedAdminAccess?'inline-block':'none';return;}
     const r=await supabaseClient.rpc('biovibe_admin_access');
@@ -668,10 +678,11 @@ async function open(){
   if(!(await admin())){alert('دسترسی ادمین ندارید.');return}
   $('bvAdminOverlay').style.display='block';
   const isPrimary=await primary();
-  $('bvAdminUsersSection').style.display=isPrimary?'block':'none';
+  const section=$('bvAdminUsersSection');
   const controls=$('bvAdminManageControls');
-  if(controls)controls.style.display=isPrimary?'flex':'none';
-  if(isPrimary) loadAdmins();
+  if(section) section.style.display=isPrimary?'block':'none';
+  if(controls) controls.style.display=isPrimary?'flex':'none';
+  if(isPrimary) await loadAdmins();
   await loadContents();
 }
 function close(){$('bvAdminOverlay').style.display='none'}
@@ -694,7 +705,7 @@ async function loadAdmins(){
   }
 }
 async function addAdmin(){
-  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین‌ها را مدیریت کند.',false);
+  if(!(await primary()))return msg('این بخش فقط برای ادمین اصلی در دسترس است.',false);
   const email=$('bvAdminEmail').value.trim().toLowerCase();
   if(!email)return alert('ایمیل کاربر را وارد کنید.');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return msg('فرمت ایمیل صحیح نیست.',false);
@@ -707,7 +718,7 @@ async function addAdmin(){
   await loadAdmins();
 }
 async function removeAdmin(email){
-  if(!(await primary()))return msg('فقط ادمین اصلی می‌تواند ادمین‌ها را مدیریت کند.',false);
+  if(!(await primary()))return msg('این بخش فقط برای ادمین اصلی در دسترس است.',false);
   const clean=String(email||'').trim().toLowerCase();
   if(clean===PRIMARY)return msg('ادمین اصلی قابل حذف نیست.',false);
   if(!clean)return;
