@@ -412,12 +412,33 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 </style>
 
 
-<style id="biovibe-final-two-panels-override">
-/* ONE authoritative source for the two requested buttons. */
-#bvAdminHeaderBtn,#bvAdminManagerBtn{display:none !important;visibility:visible !important;opacity:1 !important;position:relative !important;}
-body.bv-primary-user #bvAdminHeaderBtn,
-body.bv-primary-user #bvAdminManagerBtn{display:inline-flex !important;align-items:center;justify-content:center;visibility:visible !important;opacity:1 !important;}
-body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:center;justify-content:center;visibility:visible !important;opacity:1 !important;}
+<style id="biovibe-events-css">
+#bvDashboardBtn{position:relative}
+#bvDashboardDot{display:none;width:9px;height:9px;border-radius:50%;background:#00eaff;position:absolute;top:5px;right:5px;box-shadow:0 0 10px rgba(0,234,255,.85)}
+.bv-event-card{background:rgba(255,255,255,.045);border:1px solid rgba(0,234,255,.20);border-radius:18px;padding:16px;margin:16px auto;max-width:760px;text-align:right;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.bv-event-card h3{margin:0 0 8px;color:#effeff}
+.bv-event-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0;color:#b9d7da;font-size:12px}
+.bv-event-badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(255,143,200,.12);border:1px solid rgba(255,143,200,.28);color:#ffb4d3;font-weight:800}
+.bv-event-desc{white-space:pre-wrap;line-height:1.9;color:#dceef0;overflow-wrap:anywhere;word-break:break-word}
+.bv-event-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.bv-event-btn{border:0;border-radius:11px;padding:9px 13px;font-family:inherit;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.bv-event-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#041014}
+.bv-event-muted{background:#16363b;color:#fff}
+.bv-event-link{color:#8ff8f0}
+.bv-event-disabled{opacity:.55;cursor:not-allowed}
+#bvEventRegisterModal{display:none;position:fixed;inset:0;z-index:10002;background:rgba(2,9,11,.94);padding:14px;overflow:auto;backdrop-filter:blur(8px)}
+#bvEventRegisterPanel{width:min(520px,100%);margin:30px auto;background:#071b1f;border:1px solid rgba(0,234,255,.28);border-radius:22px;padding:20px;color:#fff;box-shadow:0 20px 70px #000a}
+#bvEventRegisterPanel input{width:100%;padding:11px 12px;border-radius:11px;border:1px solid rgba(0,234,255,.25);background:#041316;color:#fff;font-family:inherit;margin:5px 0 10px}
+.bv-admin-event-box{margin-top:16px;padding:15px;border:1px solid rgba(0,234,255,.16);border-radius:15px;background:rgba(255,255,255,.025)}
+.bv-admin-event-box input,.bv-admin-event-box textarea,.bv-admin-event-box select{font-family:inherit}
+.bv-event-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bv-event-admin-grid label{display:block;font-size:12px;color:#b9d7da;margin-bottom:4px}
+.bv-event-admin-grid input,.bv-event-admin-grid select,.bv-event-admin-box textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,234,255,.22);background:#041316;color:#fff}
+.bv-admin-event-item{padding:12px;border:1px solid rgba(0,234,255,.14);border-radius:12px;margin:8px 0;background:rgba(255,255,255,.025)}
+.bv-admin-event-item-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.bv-admin-event-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.bv-print-area{display:none}
+@media(max-width:640px){.bv-event-admin-grid{grid-template-columns:1fr}#bvEventRegisterPanel{margin:10px auto}.bv-event-actions .bv-event-btn{flex:1 1 auto}}
 </style>
 
 </head>
@@ -485,6 +506,8 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
         <a onclick="openPage('company')">Bio‑Company</a>
         <a onclick="openPage('news')">Bio‑News</a>
         <a onclick="openPage('journal')">Bio‑Journal Club</a>
+        <a onclick="openPage('biotalk')">BioTalk</a>
+        <a onclick="openPage('workshop')">کارگاه</a>
     </div>
 
     <section id="heroSection" class="hero">
@@ -497,6 +520,8 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
     <section id="bvRecentHome" class="bv-recent-home"><h2>محتوای جدید</h2><div id="recent-home-container" class="bv-recent-grid"></div></section>
     <section id="news" class="page"><h2>Bio‑News</h2><div id="news-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="journal" class="page"><h2>Bio‑Journal Club</h2><div id="journal-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="biotalk" class="page"><h2>BioTalk</h2><div id="biotalk-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="workshop" class="page"><h2>کارگاه</h2><div id="workshop-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="lab" class="page"><h2>Bio‑Lab</h2><div id="lab-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="media" class="page"><h2>Bio‑Media</h2><div id="media-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
     <section id="company" class="page"><h2>Bio‑Company</h2><div id="company-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
@@ -679,9 +704,9 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
 
     let activePage = 'home';
     function openPage(id){
-        const valid=['news','journal','lab','media','company'];
+        const valid=['news','journal','lab','media','company','biotalk','workshop'];
         if(!valid.includes(id)) return;
-        activePage=id; if(window.BVNotifications){const sm={news:'Bio-News',journal:'Bio-Journal Club',lab:'Bio-Lab',media:'Bio-Media',company:'Bio-Company'};window.BVNotifications.mark(sm[id]||id);}
+        activePage=id; if(window.BVNotifications){const sm={news:'Bio-News',journal:'Bio-Journal Club',lab:'Bio-Lab',media:'Bio-Media',company:'Bio-Company',biotalk:'BioTalk',workshop:'کارگاه'};window.BVNotifications.mark(sm[id]||id); if(id==='biotalk'&&window.BVEvents)window.BVEvents.markEventNotice('BioTalk'); if(id==='workshop'&&window.BVEvents)window.BVEvents.markEventNotice('کارگاه');}
         const hero=document.getElementById("heroSection");
         const recent=document.getElementById("bvRecentHome");
         if(hero) hero.style.display="none";
@@ -754,12 +779,12 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
       function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
       function write(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
       function scan(rows){const seen=read(), now=Date.now();unseen=new Set();latest.clear();for(const r of rows){const sec=sectionLabel(r.section),t=Date.parse(r.created_at||'');if(!Number.isFinite(t))continue;latest.set(sec,Math.max(latest.get(sec)||0,t));if(now-t<=14*60*60*1000 && t>(Number(seen[sec])||0))unseen.add(sec)} update();}
-      function update(){const dot=document.getElementById('bvDashboardDot'),menu=document.getElementById('sideMenu');if(dot)dot.style.display=unseen.size?'inline-block':'none';if(menu){menu.querySelectorAll('.bv-menu-notify').forEach(e=>e.remove());menu.querySelectorAll('a').forEach(a=>{const t=String(a.textContent||'');const hit=[['Bio-News','news'],['Bio-Journal Club','journal'],['Bio-Lab','lab'],['Bio-Media','media'],['Bio-Company','company']].find(([label])=>t.includes(label));if(hit&&unseen.has(hit[0])){const d=document.createElement('span');d.className='bv-menu-notify';a.appendChild(d)}})}}
+      function update(){const dot=document.getElementById('bvDashboardDot'),menu=document.getElementById('sideMenu');if(dot)dot.style.display=unseen.size?'inline-block':'none';if(menu){menu.querySelectorAll('.bv-menu-notify').forEach(e=>e.remove());menu.querySelectorAll('a').forEach(a=>{const t=String(a.textContent||'');const hit=[['Bio-News','news'],['Bio-Journal Club','journal'],['Bio-Lab','lab'],['Bio-Media','media'],['Bio-Company','company'],['BioTalk','biotalk'],['کارگاه','workshop']].find(([label])=>t.includes(label));if(hit&&unseen.has(hit[0])){const d=document.createElement('span');d.className='bv-menu-notify';a.appendChild(d)}})}}
       function mark(sec){const label=sectionLabel(sec),o=read();o[label]=latest.get(label)||Date.now();write(o);unseen.delete(label);update();}
       return {scan,update,mark,isUnseen:s=>unseen.has(sectionLabel(s))};
     })();
     async function loadContent(){
-      const c={news:document.getElementById('news-container'),journal:document.getElementById('journal-container'),lab:document.getElementById('lab-container'),media:document.getElementById('media-container'),company:document.getElementById('company-container'),recent:document.getElementById('recent-home-container'),recentWrap:document.getElementById('bvRecentHome')};
+      const c={news:document.getElementById('news-container'),journal:document.getElementById('journal-container'),lab:document.getElementById('lab-container'),media:document.getElementById('media-container'),company:document.getElementById('company-container'),biotalk:document.getElementById('biotalk-container'),workshop:document.getElementById('workshop-container'),recent:document.getElementById('recent-home-container'),recentWrap:document.getElementById('bvRecentHome')};
       try{
         const r=await supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(200);
         if(r.error)throw r.error;
@@ -779,6 +804,9 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
           c.recentWrap.style.display=(activePage==='home' && recent.length)?'block':'none';
           if(c.recent)c.recent.innerHTML=recent.map(renderSummaryContent).join('');
         }
+
+        // Registration events
+        try{ await BVEvents.loadPublic(); }catch(e){ console.error(e); }
       }catch(e){console.error(e);Object.values(c).forEach(el=>{if(el&&el!==c.recentWrap)el.innerHTML='<div class="bv-empty">خطا در بارگذاری محتوا.</div>'});if(c.recentWrap)c.recentWrap.style.display='none'}
     }
     async function restoreSession() {
@@ -813,6 +841,14 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
     restoreSession().then(()=>{setTimeout(()=>{try{window.BVSuperAdmin&&BVSuperAdmin.refresh();}catch(e){} try{window.BVOriginalAdmin&&BVOriginalAdmin.refresh();}catch(e){}},0)});
 </script>
 
+<div id="bvEventRegisterModal" onclick="if(event.target===this)BVEvents.closeRegister()"><div id="bvEventRegisterPanel">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-size:12px;color:#ff9ac9;font-weight:800">ثبت‌نام</div><h2 id="bvEventRegisterTitle" style="margin:2px 0"></h2></div><button type="button" class="bv-event-btn bv-event-muted" onclick="BVEvents.closeRegister()">بستن</button></div>
+<p id="bvEventRegisterStatus" style="color:#b9d7da;line-height:1.8"></p>
+<label>نام</label><input id="bvRegFirst" autocomplete="given-name">
+<label>نام خانوادگی</label><input id="bvRegLast" autocomplete="family-name">
+<label>رشته</label><input id="bvRegMajor" autocomplete="organization-title">
+<button id="bvRegSubmit" type="button" class="bv-event-btn bv-event-primary" style="width:100%;margin-top:6px" onclick="BVEvents.submitRegistration()">ثبت‌نام</button>
+</div></div>
 <div id="bvContentModal" onclick="if(event.target===this)closeContentModal()"><div id="bvContentModalInner">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><h2 id="bvContentModalTitle" style="margin:0"></h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="closeContentModal()">بستن</button></div>
   <div id="bvContentModalImages"></div><div id="bvContentModalBody" class="bv-content-full"></div><div id="bvContentModalFiles" style="margin-top:14px"></div><div id="bvContentModalLink" style="margin-top:14px"></div>
@@ -847,6 +883,20 @@ body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:
   </div>
 </section>
 <hr style="border-color:rgba(0,234,255,.14);margin:22px 0">
+<section id="bvAdminEventSection" class="bv-admin-event-box">
+<h3>ثبت‌نامی‌ها: BioTalk و کارگاه</h3>
+<p class="bv-admin-sub">برای هر رویداد، بازه ثبت‌نام و لینک خصوصی شرکت‌کنندگان را تعیین کنید. لینک فقط بعد از ثبت‌نام به کاربر نشان داده می‌شود.</p>
+<div class="bv-event-admin-grid">
+  <div><label>نوع</label><select id="bvEventType"><option value="BioTalk">BioTalk</option><option value="کارگاه">کارگاه</option></select></div>
+  <div><label>عنوان</label><input id="bvEventTitle" placeholder="عنوان رویداد"></div>
+  <div><label>شروع ثبت‌نام</label><input id="bvEventRegStart" type="datetime-local"></div>
+  <div><label>پایان ثبت‌نام</label><input id="bvEventRegEnd" type="datetime-local"></div>
+</div>
+<div style="margin-top:10px"><label style="display:block;font-size:12px;color:#b9d7da;margin-bottom:4px">توضیحات</label><textarea id="bvEventDescription" rows="5" style="width:100%;min-height:120px;padding:10px;border-radius:10px;border:1px solid rgba(0,234,255,.22);background:#041316;color:#fff" placeholder="توضیحات رویداد"></textarea></div>
+<div style="margin-top:10px"><label style="display:block;font-size:12px;color:#b9d7da;margin-bottom:4px">لینک بعد از ثبت‌نام</label><input id="bvEventLink" type="url" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,234,255,.22);background:#041316;color:#fff" placeholder="https://..."></div>
+<div class="bv-event-actions"><button type="button" class="bv-event-btn bv-event-primary" onclick="BVEventsAdmin.create()">ثبت رویداد</button><button type="button" class="bv-event-btn bv-event-muted" onclick="BVEventsAdmin.reload()">بازخوانی</button></div>
+<div id="bvEventAdminStatus" class="bv-admin-status"></div><div id="bvEventAdminList" style="margin-top:12px"></div>
+</section>
 <section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" class="bv-content-description-input" rows="9" placeholder="توضیحات کامل محتوا را اینجا بنویسید"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
 </div></div>
 
@@ -1330,90 +1380,124 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
 </script>
 
 
-<script id="biovibe-final-two-panels-runtime">
+<script id="bv-events-system-final">
 (function(){
-  'use strict';
-  const PRIMARY='ariakangavari8@gmail.com';
-  const norm=v=>String(v||'').trim().toLowerCase();
   const $=id=>document.getElementById(id);
-
-  async function getCurrentUser(){
-    try{
-      const r=await supabaseClient.auth.getSession();
-      if(r && !r.error) return r.data && r.data.session ? r.data.session.user : null;
-    }catch(e){}
-    try{
-      const r=await supabaseClient.auth.getUser();
-      if(r && !r.error) return r.data ? r.data.user : null;
-    }catch(e){}
-    return null;
-  }
-
-  function getEmail(u){
-    const list=[
-      u && u.email,
-      u && u.user_metadata && u.user_metadata.email,
-      u && Array.isArray(u.identities) ? u.identities.map(x=>x && x.identity_data && x.identity_data.email) : []
-    ].flat().map(norm).filter(Boolean);
-    return list[0]||'';
-  }
-
-  async function sync(){
-    const user=await getCurrentUser();
-    const email=getEmail(user) || norm(window.BVLoggedInEmail);
-    const primary=email===PRIMARY;
-    let admin=primary;
-
-    if(!admin && user){
-      try{
-        const r=await supabaseClient.rpc('biovive_admin_access');
-        admin=!r.error && r.data===true;
-      }catch(e){ admin=false; }
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const typeToContainer={BioTalk:'biotalk-container','کارگاه':'workshop-container'};
+  let selectedEvent=null;
+  function now(){return new Date();}
+  function active(e){const n=now().getTime();const a=Date.parse(e.registration_start||'');const b=Date.parse(e.registration_end||'');return Number.isFinite(a)&&Number.isFinite(b)&&n>=a&&n<=b;}
+  function fmt(v){const d=new Date(v);return Number.isFinite(d.getTime())?d.toLocaleString('fa-IR',{dateStyle:'short',timeStyle:'short'}):'';}
+  function setNotice(t,good=true){const x=$('bvEventAdminStatus');if(!x)return;x.style.display='block';x.textContent=t;x.style.borderColor=good?'rgba(0,234,255,.35)':'rgba(255,80,110,.5)';}
+  function eventNoticeKey(e){return 'bvEventNoticeV1:'+String(e.event_type||'') ;}
+  function syncEventNotice(rows){
+    let hasNew=false;
+    const unseen=[];
+    for(const e of rows){
+      const k=eventNoticeKey(e),seen=localStorage.getItem(k)||'';
+      if(String(e.created_at||'') && String(e.created_at)>seen){hasNew=true;unseen.push(e.event_type);}
     }
-
-    document.body.classList.toggle('bv-primary-user',primary);
-    document.body.classList.toggle('bv-admin-user',admin);
-    window.BVPrimaryAdminEmail=PRIMARY;
-    window.BVCurrentUserEmail=email;
-    window.BVIsPrimaryAdmin=primary;
-    window.BVIsAdmin=admin;
-
-    const adminBtn=$('bvAdminHeaderBtn');
-    const managerBtn=$('bvAdminManagerBtn');
-    if(adminBtn) adminBtn.style.setProperty('display',admin?'inline-flex':'none','important');
-    if(managerBtn) managerBtn.style.setProperty('display',primary?'inline-flex':'none','important');
-
-    // Remove every legacy launcher so exactly two requested controls remain.
-    ['bvSuperAdminHeaderBtn','bvTruePrimaryAdminBtn','bvTruePrimaryAdminLauncher'].forEach(id=>{
-      const x=$(id); if(x) x.style.setProperty('display','none','important');
-    });
-
-    return {user,email,primary,admin};
+    const d=$('bvDashboardDot'); if(d && hasNew)d.style.display='inline-block';
+    const menu=$('sideMenu');
+    if(menu){
+      menu.querySelectorAll('.bv-event-notify').forEach(x=>x.remove());
+      const wanted=[['BioTalk','biotalk'],['کارگاه','workshop']];
+      for(const [label] of wanted){if(unseen.includes(label)){const a=[...menu.querySelectorAll('a')].find(x=>String(x.textContent||'').includes(label));if(a){const dot=document.createElement('span');dot.className='bv-menu-notify bv-event-notify';a.appendChild(dot);}}}
+    }
   }
-
-  // The manager button itself is guarded at click time.
-  const manager=$('bvAdminManagerBtn');
-  if(manager){
-    manager.onclick=async function(){
-      const s=await sync();
-      if(!s.primary){ alert('این بخش فقط برای ادمین اصلی در دسترس است.'); return; }
-      if(window.BVAdminManager && typeof window.BVAdminManager.open==='function'){
-        await window.BVAdminManager.open();
-      }else{
-        const o=$('bvAdminManagerOverlay');
-        if(o) o.style.setProperty('display','block','important');
-      }
-    };
+  function markEventNotice(type){
+    const latest=window.__bvEventLatest?.[type]; if(latest)localStorage.setItem(eventNoticeKey({event_type:type}),latest);
+    const menu=$('sideMenu'); if(menu){[...menu.querySelectorAll('a')].filter(x=>String(x.textContent||'').includes(type)).forEach(a=>a.querySelectorAll('.bv-event-notify').forEach(n=>n.remove()));}
   }
-
-  function schedule(){ [0,100,500,1500,3000].forEach(t=>setTimeout(sync,t)); }
-  if(window.supabaseClient && supabaseClient.auth){
-    supabaseClient.auth.onAuthStateChange(function(){ schedule(); });
+  async function loadPublic(){
+    const r=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
+    if(r.error){console.warn('event list',r.error.message);return;}
+    const rows=Array.isArray(r.data)?r.data:[];
+    window.__bvEventLatest={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=window.__bvEventLatest[e.event_type]||String(e.created_at||'');});
+    syncEventNotice(rows);
+    for(const [t,id] of Object.entries(typeToContainer)){
+      const box=$(id); if(!box)continue;
+      const arr=rows.filter(e=>String(e.event_type)===t);
+      box.innerHTML=arr.length?arr.map(renderPublic).join(''):'<div class="bv-empty">هنوز رویدادی ثبت نشده است.</div>';
+    }
   }
-  document.addEventListener('DOMContentLoaded',schedule);
-  window.addEventListener('load',schedule);
-  schedule();
-  window.BVFinalSyncPanels=sync;
+  function renderPublic(e){
+    const isActive=active(e); const registered=!!e.registered_by_me; const canSee=registered && e.event_link;
+    let action='';
+    if(registered){action=canSee?`<a class="bv-event-btn bv-event-primary bv-event-link" href="${esc(e.event_link)}" target="_blank" rel="noopener">ورود به لینک رویداد</a>`:'<span class="bv-event-badge">ثبت‌نام شما ثبت شده است</span>';}
+    else if(isActive) action='<button type="button" class="bv-event-btn bv-event-primary" onclick="BVEvents.openRegister('+JSON.stringify(e.id)+')">ثبت‌نام</button>';
+    else action='<span class="bv-event-badge">بازه ثبت‌نام فعال نیست</span>';
+    return `<article class="bv-event-card"><div class="bv-event-meta"><span class="bv-event-badge">${esc(e.event_type)}</span><span>ثبت‌نام: ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</span></div><h3>${esc(e.title)}</h3><div class="bv-event-desc">${esc(e.description||'')}</div><div class="bv-event-actions">${action}</div></article>`;
+  }
+  async function openRegister(id){
+    const r=await supabaseClient.rpc('biovive_get_event_for_registration',{p_event_id:id});
+    if(r.error){alert(r.error.message||'ثبت‌نام در دسترس نیست');return;}
+    const e=Array.isArray(r.data)?r.data[0]:r.data; if(!e){alert('رویداد پیدا نشد');return;}
+    selectedEvent=e;$('bvEventRegisterTitle').textContent=e.title||'';$('bvEventRegisterStatus').textContent='نام، نام خانوادگی و رشته را وارد کنید.';
+    $('bvRegFirst').value='';$('bvRegLast').value='';$('bvRegMajor').value='';$('bvEventRegisterModal').style.display='block';document.body.style.overflow='hidden';
+  }
+  function closeRegister(){$('bvEventRegisterModal').style.display='none';document.body.style.overflow='';selectedEvent=null;}
+  async function submitRegistration(){
+    if(!selectedEvent)return; const a=$('bvRegFirst').value.trim(),b=$('bvRegLast').value.trim(),c=$('bvRegMajor').value.trim();
+    if(!a||!b||!c)return alert('هر سه مورد را کامل وارد کنید.');
+    const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
+    const r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:selectedEvent.id,p_first_name:a,p_last_name:b,p_major:c});
+    btn.disabled=false;btn.textContent='ثبت‌نام';
+    if(r.error){alert(r.error.message||'ثبت‌نام ناموفق بود');return;}
+    closeRegister();alert('ثبت‌نام با موفقیت انجام شد. اکنون لینک رویداد برای شما نمایش داده می‌شود.');await loadPublic();
+  }
+  async function loadAdmin(){
+    const b=$('bvEventAdminList');if(!b)return;b.innerHTML='<div class="bv-admin-sub">در حال بارگذاری رویدادها...</div>';
+    const r=await supabaseClient.rpc('biovive_admin_list_events');
+    if(r.error){b.innerHTML='<div style="color:#ff9aaa">'+esc(r.error.message)+'</div>';return;}
+    const rows=Array.isArray(r.data)?r.data:[];
+    b.innerHTML=rows.map(e=>`<div class="bv-admin-event-item"><div class="bv-admin-event-item-head"><div><b>${esc(e.title)}</b><div class="bv-admin-sub">${esc(e.event_type)} · ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</div></div><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVEventsAdmin.print('${e.id}')">🖨️ چاپ ثبت‌نام‌شده‌ها</button></div><div class="bv-admin-event-actions"><button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVEventsAdmin.delete('${e.id}')">حذف رویداد</button></div></div>`).join('')||'<div class="bv-admin-sub">رویدادی ثبت نشده است.</div>';
+  }
+  async function create(){
+    const type=$('bvEventType').value,title=$('bvEventTitle').value.trim(),desc=$('bvEventDescription').value.trim(),start=$('bvEventRegStart').value,end=$('bvEventRegEnd').value,link=$('bvEventLink').value.trim();
+    if(!title||!start||!end||!link)return setNotice('نوع، عنوان، زمان شروع، زمان پایان و لینک را کامل کنید.',false);
+    if(Date.parse(start)>=Date.parse(end))return setNotice('زمان پایان باید بعد از زمان شروع باشد.',false);
+    setNotice('در حال ثبت رویداد...');const r=await supabaseClient.rpc('biovibe_create_event',{p_event_type:type,p_title:title,p_description:desc,p_registration_start:new Date(start).toISOString(),p_registration_end:new Date(end).toISOString(),p_event_link:link});
+    if(r.error){setNotice(r.error.message||'ثبت رویداد ناموفق بود.',false);return;}
+    $('bvEventTitle').value='';$('bvEventDescription').value='';$('bvEventRegStart').value='';$('bvEventRegEnd').value='';$('bvEventLink').value='';setNotice('رویداد با موفقیت ثبت شد.');await loadAdmin();await loadPublic();
+  }
+  async function reload(){await loadAdmin();}
+  async function remove(id){if(!confirm('این رویداد و فهرست ثبت‌نام‌هایش حذف شود؟'))return;const r=await supabaseClient.rpc('biovibe_delete_event',{p_event_id:id});if(r.error)return setNotice(r.error.message,false);setNotice('رویداد حذف شد.');await loadAdmin();await loadPublic();}
+  async function print(id){
+    const r=await supabaseClient.rpc('biovibe_event_registrations',{p_event_id:id});
+    if(r.error){return setNotice(r.error.message||'دریافت فهرست ثبت‌نامی‌ها ناموفق بود.',false);}
+    const rows=Array.isArray(r.data)?r.data:[];const title=rows[0]?.event_title||'فهرست ثبت‌نامی‌ها';
+    const w=window.open('','_blank','width=900,height=700'); if(!w){alert('پنجره چاپ توسط مرورگر مسدود شده است.');return;}
+    const body=rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join('');
+    w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Tahoma,sans-serif;padding:30px}h2{margin-bottom:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>'+esc(title)+'</h2><button onclick="window.print()">چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>زمان ثبت‌نام</th></tr></thead><tbody>'+body+'</tbody></table></body></html>');w.document.close();
+  }
+  window.BVEvents={openRegister,closeRegister,submitRegistration,loadPublic,markEventNotice};
+  window.BVEventsAdmin={create,reload,delete:remove,print,load:loadAdmin};
+  if(window.supabaseClient?.auth) supabaseClient.auth.onAuthStateChange(()=>setTimeout(()=>{loadPublic();loadAdmin();},200));
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>loadPublic(),500));
+  window.addEventListener('load',()=>setTimeout(()=>loadPublic(),700));
+})();
+</script>
+
+<script id="bv-panels-visibility-final">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';const $=id=>document.getElementById(id);const norm=x=>String(x||'').trim().toLowerCase();
+  async function sync(){
+    try{
+      const g=await supabaseClient.auth.getUser();const u=g?.data?.user;const email=norm(u?.email||u?.user_metadata?.email||window.BVLoggedInEmail||'');
+      let admin=email===PRIMARY;
+      if(u&&!admin){try{const r=await supabaseClient.rpc('biovive_admin_access');admin=!r.error&&r.data===true;}catch(e){}}
+      const a=$('bvAdminHeaderBtn');const m=$('bvAdminManagerBtn');
+      if(a)a.style.setProperty('display',admin?'inline-flex':'none','important');
+      if(m)m.style.setProperty('display',email===PRIMARY?'inline-flex':'none','important');
+      window.BVLoggedInEmail=email;
+    }catch(e){
+      const a=$('bvAdminHeaderBtn'),m=$('bvAdminManagerBtn');if(a)a.style.setProperty('display','none','important');if(m)m.style.setProperty('display','none','important');
+    }
+  }
+  if(window.supabaseClient?.auth)supabaseClient.auth.onAuthStateChange(()=>setTimeout(sync,30));
+  document.addEventListener('DOMContentLoaded',sync);window.addEventListener('load',sync);[100,400,1000,2000,4000].forEach(t=>setTimeout(sync,t));
 })();
 </script>
 
