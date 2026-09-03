@@ -402,6 +402,15 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
   justify-content:center;
 }
 </style>
+
+<style id="bv-two-panels-authoritative-css">
+/* Final authoritative visibility rules: two buttons only. */
+#bvAdminHeaderBtn, #bvAdminManagerBtn{display:none !important;}
+#bvAdminHeaderBtn.bv-show, #bvAdminManagerBtn.bv-show{display:inline-flex !important;align-items:center;justify-content:center;visibility:visible !important;}
+/* Hide all legacy super-admin launchers so there is only one admin-management button. */
+#bvSuperAdminHeaderBtn,#bvTruePrimaryAdminBtn,#bvTruePrimaryAdminLauncher{display:none !important;}
+</style>
+
 </head>
 
 <body>
@@ -1248,5 +1257,68 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   setTimeout(sync,300); setTimeout(sync,1200); setTimeout(sync,2500);
 })();
 </script>
+
+<script id="bv-two-panels-authoritative-js">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  const $=id=>document.getElementById(id);
+
+  async function syncPanels(){
+    try{
+      const {data,error}=await supabaseClient.auth.getUser();
+      if(error) throw error;
+      const u=data?.user;
+      const email=norm(u?.email || u?.user_metadata?.email || window.BVLoggedInEmail || '');
+      const isPrimary=email===PRIMARY;
+      let isAdmin=isPrimary;
+      if(!isAdmin && u){
+        try{
+          const r=await supabaseClient.rpc('biovibe_admin_access');
+          isAdmin=!r.error && r.data===true;
+        }catch(e){ isAdmin=false; }
+      }
+
+      const adminBtn=$('bvAdminHeaderBtn');
+      const managerBtn=$('bvAdminManagerBtn');
+      if(adminBtn) adminBtn.classList.toggle('bv-show',isAdmin);
+      if(managerBtn) managerBtn.classList.toggle('bv-show',isPrimary);
+
+      // Keep only the two requested header buttons visible.
+      const old1=$('bvSuperAdminHeaderBtn'); if(old1) old1.classList.remove('bv-show');
+      const old2=$('bvTruePrimaryAdminBtn'); if(old2) old2.classList.remove('bv-show');
+      const old3=$('bvTruePrimaryAdminLauncher'); if(old3) old3.classList.remove('bv-show');
+
+      window.BVPrimaryAdminEmail=PRIMARY;
+      window.BVCurrentUserEmail=email;
+      return {email,isPrimary,isAdmin};
+    }catch(e){
+      const a=$('bvAdminHeaderBtn'),m=$('bvAdminManagerBtn');
+      if(a)a.classList.remove('bv-show');
+      if(m)m.classList.remove('bv-show');
+      return {email:'',isPrimary:false,isAdmin:false};
+    }
+  }
+
+  // Ensure manager access is checked at the moment it opens.
+  const oldOpen=window.BVAdminManager?.open;
+  if(oldOpen){
+    window.BVAdminManager.open=async function(){
+      const state=await syncPanels();
+      if(!state.isPrimary){ alert('این بخش فقط برای ادمین اصلی است.'); return; }
+      return oldOpen.apply(this,arguments);
+    };
+  }
+
+  if(window.supabaseClient?.auth){
+    supabaseClient.auth.onAuthStateChange(function(){setTimeout(syncPanels,30);});
+  }
+  document.addEventListener('DOMContentLoaded',syncPanels);
+  window.addEventListener('load',syncPanels);
+  [100,400,1000,2000,4000].forEach(t=>setTimeout(syncPanels,t));
+  window.BVSyncTwoPanels=syncPanels;
+})();
+</script>
+
 </body>
 </html>
