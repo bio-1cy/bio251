@@ -411,6 +411,15 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 #bvSuperAdminHeaderBtn,#bvTruePrimaryAdminBtn,#bvTruePrimaryAdminLauncher{display:none !important;}
 </style>
 
+
+<style id="biovibe-final-two-panels-override">
+/* ONE authoritative source for the two requested buttons. */
+#bvAdminHeaderBtn,#bvAdminManagerBtn{display:none !important;visibility:visible !important;opacity:1 !important;position:relative !important;}
+body.bv-primary-user #bvAdminHeaderBtn,
+body.bv-primary-user #bvAdminManagerBtn{display:inline-flex !important;align-items:center;justify-content:center;visibility:visible !important;opacity:1 !important;}
+body.bv-admin-user #bvAdminHeaderBtn{display:inline-flex !important;align-items:center;justify-content:center;visibility:visible !important;opacity:1 !important;}
+</style>
+
 </head>
 
 <body>
@@ -1317,6 +1326,94 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   window.addEventListener('load',syncPanels);
   [100,400,1000,2000,4000].forEach(t=>setTimeout(syncPanels,t));
   window.BVSyncTwoPanels=syncPanels;
+})();
+</script>
+
+
+<script id="biovibe-final-two-panels-runtime">
+(function(){
+  'use strict';
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  const $=id=>document.getElementById(id);
+
+  async function getCurrentUser(){
+    try{
+      const r=await supabaseClient.auth.getSession();
+      if(r && !r.error) return r.data && r.data.session ? r.data.session.user : null;
+    }catch(e){}
+    try{
+      const r=await supabaseClient.auth.getUser();
+      if(r && !r.error) return r.data ? r.data.user : null;
+    }catch(e){}
+    return null;
+  }
+
+  function getEmail(u){
+    const list=[
+      u && u.email,
+      u && u.user_metadata && u.user_metadata.email,
+      u && Array.isArray(u.identities) ? u.identities.map(x=>x && x.identity_data && x.identity_data.email) : []
+    ].flat().map(norm).filter(Boolean);
+    return list[0]||'';
+  }
+
+  async function sync(){
+    const user=await getCurrentUser();
+    const email=getEmail(user) || norm(window.BVLoggedInEmail);
+    const primary=email===PRIMARY;
+    let admin=primary;
+
+    if(!admin && user){
+      try{
+        const r=await supabaseClient.rpc('biovive_admin_access');
+        admin=!r.error && r.data===true;
+      }catch(e){ admin=false; }
+    }
+
+    document.body.classList.toggle('bv-primary-user',primary);
+    document.body.classList.toggle('bv-admin-user',admin);
+    window.BVPrimaryAdminEmail=PRIMARY;
+    window.BVCurrentUserEmail=email;
+    window.BVIsPrimaryAdmin=primary;
+    window.BVIsAdmin=admin;
+
+    const adminBtn=$('bvAdminHeaderBtn');
+    const managerBtn=$('bvAdminManagerBtn');
+    if(adminBtn) adminBtn.style.setProperty('display',admin?'inline-flex':'none','important');
+    if(managerBtn) managerBtn.style.setProperty('display',primary?'inline-flex':'none','important');
+
+    // Remove every legacy launcher so exactly two requested controls remain.
+    ['bvSuperAdminHeaderBtn','bvTruePrimaryAdminBtn','bvTruePrimaryAdminLauncher'].forEach(id=>{
+      const x=$(id); if(x) x.style.setProperty('display','none','important');
+    });
+
+    return {user,email,primary,admin};
+  }
+
+  // The manager button itself is guarded at click time.
+  const manager=$('bvAdminManagerBtn');
+  if(manager){
+    manager.onclick=async function(){
+      const s=await sync();
+      if(!s.primary){ alert('این بخش فقط برای ادمین اصلی در دسترس است.'); return; }
+      if(window.BVAdminManager && typeof window.BVAdminManager.open==='function'){
+        await window.BVAdminManager.open();
+      }else{
+        const o=$('bvAdminManagerOverlay');
+        if(o) o.style.setProperty('display','block','important');
+      }
+    };
+  }
+
+  function schedule(){ [0,100,500,1500,3000].forEach(t=>setTimeout(sync,t)); }
+  if(window.supabaseClient && supabaseClient.auth){
+    supabaseClient.auth.onAuthStateChange(function(){ schedule(); });
+  }
+  document.addEventListener('DOMContentLoaded',schedule);
+  window.addEventListener('load',schedule);
+  schedule();
+  window.BVFinalSyncPanels=sync;
 })();
 </script>
 
