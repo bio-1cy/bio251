@@ -1447,32 +1447,20 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     buttons.forEach(b=>b.classList.toggle('visible',ok));
   }
   async function openRegister(id){
-    // Use the same event list that successfully renders the event card. This avoids
-    // breaking registration when an older get_event RPC is missing/mismatched.
     try{
+      const cached=window.__bvEventsById?.get(String(id));
+      if(cached){
+        if(active(cached)){openRegisterFromData(cached);return;}
+        alert('بازه ثبت‌نام این رویداد فعال نیست.');return;
+      }
       const lr=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
       if(!lr.error){
         const e=(Array.isArray(lr.data)?lr.data:[]).find(x=>String(x.id)===String(id));
-        if(e && active(e)){ openRegisterFromData(e); return; }
-        if(e && !active(e)){ alert('بازه ثبت‌نام این رویداد فعال نیست.'); return; }
+        if(e && active(e)){openRegisterFromData(e);return;}
+        if(e){alert('بازه ثبت‌نام این رویداد فعال نیست.');return;}
       }
     }catch(e){}
-    const names=['biovibe_get_event_for_registration','biovive_get_event_for_registration'];
-    for(const name of names){
-      try{
-        const r=await supabaseClient.rpc(name,{p_event_id:String(id)});
-        if(!r.error){openRegisterFromData(r.data);return;}
-      }catch(e){}
-    }
     alert('ثبت‌نام در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.');
-  }
-  function openRegisterFromData(data){
-    const e=Array.isArray(data)?data[0]:data; if(!e){alert('رویداد پیدا نشد یا بازه ثبت‌نام فعال نیست.');return;}
-    selectedEvent=e;
-    $('bvEventRegisterTitle').textContent=e.title||'';
-    $('bvEventRegisterStatus').textContent='نام، نام خانوادگی و رشته را وارد کنید.';
-    $('bvRegFirst').value='';$('bvRegLast').value='';$('bvRegMajor').value='';
-    $('bvEventRegisterModal').style.display='block';document.body.style.overflow='hidden';
   }
   function closeRegister(){$('bvEventRegisterModal').style.display='none';document.body.style.overflow='';selectedEvent=null;}
   async function submitRegistration(){
@@ -1480,14 +1468,28 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const a=$('bvRegFirst').value.trim(),b=$('bvRegLast').value.trim(),c=$('bvRegMajor').value.trim();
     if(!a||!b||!c){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
     const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
-    let r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
-    if(r.error){
-      const r2=await supabaseClient.rpc('biovive_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
-      if(!r2.error) r=r2;
-    }
-    btn.disabled=false;btn.textContent='ثبت‌نام';
-    if(r.error){alert(r.error.message||'ثبت‌نام ناموفق بود.');return;}
-    closeRegister();alert('ثبت‌نام با موفقیت انجام شد. اکنون لینک رویداد برای شما نمایش داده می‌شود.');await loadPublic();
+    try{
+      const u=(await supabaseClient.auth.getUser()).data?.user;
+      if(!u){alert('برای ثبت‌نام ابتدا وارد حساب شوید.');return;}
+      // Direct database insert is the primary path; this removes dependency on legacy RPC names.
+      let r=await supabaseClient.from('biovibe_event_registrations').upsert({
+        event_id:String(selectedEvent.id),user_id:u.id,first_name:a,last_name:b,major:c
+      },{onConflict:'event_id,user_id'});
+      if(r.error){
+        // Fallback to the RPC for databases that intentionally restrict direct inserts.
+        r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
+        if(r.error){
+          const r2=await supabaseClient.rpc('biovive_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
+          if(!r2.error) r=r2;
+        }
+      }
+      if(r.error)throw r.error;
+      closeRegister();
+      alert('ثبت‌نام با موفقیت انجام شد. اکنون لینک رویداد برای شما نمایش داده می‌شود.');
+      await loadPublic();
+    }catch(e){
+      alert(e?.message||'ثبت‌نام ناموفق بود.');
+    }finally{btn.disabled=false;btn.textContent='ثبت‌نام';}
   }
   async function openAdminList(id){
     try{
@@ -1607,6 +1609,107 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   const oldAdminOpen=window.BVOriginalAdmin?.open; if(oldAdminOpen && !window.__bvEventAdminHooked){ window.__bvEventAdminHooked=true; window.BVOriginalAdmin.open=async function(){ const r=await oldAdminOpen.apply(this,arguments); try{ if(window.BVEventsAdmin?.load) await window.BVEventsAdmin.load(); }catch(e){} return r; }; }
   if(supabaseClient?.auth)supabaseClient.auth.onAuthStateChange(()=>setTimeout(setHeader,100));
   document.addEventListener('DOMContentLoaded',()=>setTimeout(setHeader,100));window.addEventListener('load',()=>setTimeout(setHeader,100));[300,1000,2500,5000].forEach(t=>setTimeout(setHeader,t));
+})();
+</script>
+<script id="bv-final-stable-admin-and-registration-fix">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  const $=id=>document.getElementById(id);
+  let signedOut=false;
+  let cachedAdmin=false;
+  let cachedPrimary=false;
+  let booted=false;
+
+  async function readUser(){
+    try{return (await supabaseClient.auth.getSession()).data?.session?.user||null}catch(e){return null}
+  }
+  async function detect(){
+    const u=await readUser();
+    if(!u){signedOut=true;cachedAdmin=false;cachedPrimary=false;return {primary:false,admin:false,user:null};}
+    signedOut=false;
+    const email=norm(u.email||u.user_metadata?.email||'');
+    const primary=email===PRIMARY;
+    if(primary){cachedPrimary=true;cachedAdmin=true;}
+    if(!primary && !cachedAdmin){
+      try{const r=await supabaseClient.rpc('biovibe_admin_access');if(!r.error&&r.data===true)cachedAdmin=true;}catch(e){}
+    }
+    return {primary:primary||cachedPrimary,admin:primary||cachedAdmin,user:u};
+  }
+  function paint(state){
+    const a=$('bvAdminHeaderBtn');
+    const m=$('bvAdminManagerBtn');
+    if(!a||!m)return;
+    if(signedOut){
+      a.style.setProperty('display','none','important');
+      m.style.setProperty('display','none','important');
+      return;
+    }
+    a.style.setProperty('display',state.admin?'inline-flex':'none','important');
+    m.style.setProperty('display',state.primary?'inline-flex':'none','important');
+    a.style.setProperty('visibility','visible','important');
+    m.style.setProperty('visibility','visible','important');
+  }
+  async function sync(){const st=await detect();paint(st);return st;}
+
+  // Prevent old legacy scripts from hiding or flickering the two real buttons.
+  const obs=new MutationObserver(()=>{
+    if(booted&&!signedOut){
+      const a=$('bvAdminHeaderBtn'),m=$('bvAdminManagerBtn');
+      if(cachedAdmin&&a)a.style.setProperty('display','inline-flex','important');
+      if(cachedPrimary&&m)m.style.setProperty('display','inline-flex','important');
+    }
+  });
+  function boot(){
+    if(booted)return; booted=true;
+    const a=$('bvAdminHeaderBtn'),m=$('bvAdminManagerBtn');
+    if(a)obs.observe(a,{attributes:true,attributeFilter:['style','class']});
+    if(m)obs.observe(m,{attributes:true,attributeFilter:['style','class']});
+    sync();
+  }
+  // Stable manager open: independent of all legacy manager implementations.
+  window.BVAdminManager={
+    async open(){
+      const st=await sync();
+      if(!st.primary){alert('این بخش فقط برای ادمین اصلی است.');return;}
+      const o=$('bvAdminManagerOverlay'); if(o){o.style.display='block';o.setAttribute('aria-hidden','false');}
+      await this.load();
+    },
+    close(){const o=$('bvAdminManagerOverlay');if(o){o.style.display='none';o.setAttribute('aria-hidden','true');}},
+    async load(){
+      const st=await sync(); if(!st.primary)return;
+      const b=$('bvAdminManagerList'); if(!b)return;
+      b.innerHTML='<div style="color:#b9d7da">در حال بارگذاری...</div>';
+      let r=await supabaseClient.rpc('biovibe_list_admins');
+      if(r.error)r=await supabaseClient.rpc('list_admins');
+      if(r.error){b.innerHTML='<div style="color:#ff9aaa;line-height:1.8">'+String(r.error.message||r.error)+'</div>';return;}
+      const rows=Array.isArray(r.data)?r.data:[];
+      b.innerHTML=(rows.filter(x=>x?.email).map(x=>{
+        const e=norm(x.email),main=e===PRIMARY;
+        return '<div class="bv-am-item"><div class="bv-am-email"><b>'+String(x.email).replace(/[&<>]/g,'')+'</b><div style="font-size:12px;color:#b9d7da">'+String(x.role||'admin')+(main?' · ادمین اصلی':'')+'</div></div>'+
+          (main?'<button class="bv-am-btn bv-am-muted" disabled>ادمین اصلی</button>':'<button class="bv-am-btn bv-am-danger" onclick="BVAdminManager.remove('+JSON.stringify(e)+')">حذف</button>')+'</div>';
+      }).join(''))||'<div style="color:#b9d7da">ادمین دیگری ثبت نشده است.</div>';
+    },
+    async add(){
+      const st=await sync();if(!st.primary)return alert('فقط ادمین اصلی اجازه دارد.');
+      const i=$('bvAdminManagerEmail'),e=norm(i?.value);if(!e)return alert('ایمیل کاربر را وارد کنید.');
+      let r=await supabaseClient.rpc('biovibe_add_admin_by_email',{p_email:e});
+      if(r.error)r=await supabaseClient.rpc('set_admin_by_email',{p_email:e});
+      const box=$('bvAdminManagerStatus');if(r.error){if(box){box.style.display='block';box.textContent=r.error.message||String(r.error);}return;}
+      if(i)i.value='';if(box){box.style.display='block';box.textContent='ادمین با موفقیت اضافه شد.';}await this.load();
+    },
+    async remove(e){
+      const st=await sync();if(!st.primary)return alert('فقط ادمین اصلی اجازه دارد.');e=norm(e);if(!e||e===PRIMARY)return;
+      if(!confirm('ادمین «'+e+'» حذف شود؟'))return;
+      let r=await supabaseClient.rpc('biovibe_remove_admin_by_email',{p_email:e});
+      if(r.error)r=await supabaseClient.rpc('remove_admin_by_email',{p_email:e});
+      const box=$('bvAdminManagerStatus');if(r.error){if(box){box.style.display='block';box.textContent=r.error.message||String(r.error);}return;}
+      if(box){box.style.display='block';box.textContent='دسترسی ادمین حذف شد.';}await this.load();
+    }
+  };
+  if(supabaseClient?.auth){supabaseClient.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT'){signedOut=true;cachedAdmin=false;cachedPrimary=false;}setTimeout(sync,40);});}
+  document.addEventListener('DOMContentLoaded',boot);window.addEventListener('load',boot);
+  [100,300,800,1500,3000].forEach(t=>setTimeout(sync,t));
 })();
 </script>
 </body>
