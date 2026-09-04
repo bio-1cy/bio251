@@ -1438,17 +1438,28 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   async function applyAdminEventButtons(){
     const buttons=[...document.querySelectorAll('.bv-event-admin-list')]; if(!buttons.length)return;
     let ok=false;
-    try{const r=await supabaseClient.rpc('biovibe_admin_access'); ok=!r.error&&r.data===true;}catch(e){ok=false;}
+    try{const r=await supabaseClient.rpc('biovibe_admin_access'); ok=!r.error&&r.data===true;}catch(e){try{const r2=await supabaseClient.rpc('biovive_admin_access');ok=!r2.error&&r2.data===true;}catch(e2){const u=(await supabaseClient.auth.getUser()).data?.user;ok=String(u?.email||'').trim().toLowerCase()==='ariakangavari8@gmail.com';}}
     buttons.forEach(b=>b.classList.toggle('visible',ok));
   }
   async function openRegister(id){
-    const r=await supabaseClient.rpc('biovive_get_event_for_registration',{p_event_id:String(id)});
-    if(r.error){
-      const r2=await supabaseClient.rpc('biovibe_get_event_for_registration',{p_event_id:String(id)});
-      if(r2.error){alert(r2.error.message||r.error.message||'ثبت‌نام در دسترس نیست');return;}
-      return openRegisterFromData(r2.data);
+    // Use the same event list that successfully renders the event card. This avoids
+    // breaking registration when an older get_event RPC is missing/mismatched.
+    try{
+      const lr=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
+      if(!lr.error){
+        const e=(Array.isArray(lr.data)?lr.data:[]).find(x=>String(x.id)===String(id));
+        if(e && active(e)){ openRegisterFromData(e); return; }
+        if(e && !active(e)){ alert('بازه ثبت‌نام این رویداد فعال نیست.'); return; }
+      }
+    }catch(e){}
+    const names=['biovibe_get_event_for_registration','biovive_get_event_for_registration'];
+    for(const name of names){
+      try{
+        const r=await supabaseClient.rpc(name,{p_event_id:String(id)});
+        if(!r.error){openRegisterFromData(r.data);return;}
+      }catch(e){}
     }
-    return openRegisterFromData(r.data);
+    alert('ثبت‌نام در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.');
   }
   function openRegisterFromData(data){
     const e=Array.isArray(data)?data[0]:data; if(!e){alert('رویداد پیدا نشد یا بازه ثبت‌نام فعال نیست.');return;}
