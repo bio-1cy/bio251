@@ -447,12 +447,6 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 @media(max-width:640px){.bv-event-admin-grid{grid-template-columns:1fr}#bvEventRegisterPanel{margin:10px auto}.bv-event-actions .bv-event-btn{flex:1 1 auto}}
 </style>
 
-
-<style id="bv-back-button-top-final">
-.backBtn{display:block;margin:0 0 18px auto!important;}
-.page{text-align:right;}
-.page>h2{text-align:center;margin-bottom:12px;}
-</style>
 </head>
 
 <body>
@@ -529,14 +523,14 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         </div>
         <div class="hero-content"><h1>BIOVIBE</h1><p>انجمن علمی زیست شناسی</p></div>
     </section>
-    <section id="bvRecentHome" class="bv-recent-home"><h2>محتوای جدید</h2><div id="recent-home-container" class="bv-recent-grid"></div></section>
-    <section id="news" class="page"><div id="news-container"></div><h2>Bio‑News</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
-    <section id="journal" class="page"><div id="journal-container"></div><h2>Bio‑Journal Club</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
-    <section id="biotalk" class="page"><div id="biotalk-container"></div><h2>BioTalk</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
-    <section id="workshop" class="page"><div id="workshop-container"></div><h2>کارگاه</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
-    <section id="lab" class="page"><div id="lab-container"></div><h2>Bio‑Lab</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
-    <section id="media" class="page"><div id="media-container"></div><h2>Bio‑Media</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
-    <section id="company" class="page"><div id="company-container"></div><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="bvRecentHome" class="bv-recent-home"><h2>محتوای جدید · ۲۴ ساعت اخیر</h2><div id="recent-home-container" class="bv-recent-grid"></div></section>
+    <section id="news" class="page"><h2>Bio‑News</h2><div id="news-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="journal" class="page"><h2>Bio‑Journal Club</h2><div id="journal-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="biotalk" class="page"><h2>BioTalk</h2><div id="biotalk-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="workshop" class="page"><h2>کارگاه</h2><div id="workshop-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="lab" class="page"><h2>Bio‑Lab</h2><div id="lab-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="media" class="page"><h2>Bio‑Media</h2><div id="media-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="company" class="page"><h2>Bio‑Company</h2><div id="company-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -604,10 +598,10 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
             btn.innerText = "در حال ورود...";
 
             // Securely resolve username -> email through a Supabase RPC.
-            const { data: email, error: profileError } = await supabaseClient
+            const { data: rpcEmail, error: profileError } = await supabaseClient
                 .rpc("get_login_email", { p_username: u });
 
-            if (profileError || !email) {
+            if (profileError || !rpcEmail) {
                 btn.disabled = false;
                 btn.innerText = "ورود";
                 alert("نام کاربری یا رمز عبور اشتباه است.");
@@ -615,7 +609,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
             }
 
             const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
+                email: rpcEmail,
                 password: p
             });
 
@@ -627,7 +621,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
                 return;
             }
 
-            window.BVLoggedInEmail = String(email || "").trim().toLowerCase();
+            window.BVLoggedInEmail = String(rpcEmail || "").trim().toLowerCase();
             document.getElementById('loginPage').style.display = "none";
             document.getElementById('mainSite').style.display = "block";
             if (window.BVSuperAdmin?.refresh) window.BVSuperAdmin.refresh();
@@ -648,7 +642,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
             btn.innerText = "در حال ثبت‌نام...";
 
             const { data, error } = await supabaseClient.auth.signUp({
-                email: email,
+                email: rpcEmail,
                 password: p,
                 options: {
                     data: {
@@ -790,7 +784,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
       const KEY='biovibe_seen_section_times_v2'; let unseen=new Set(), latest=new Map();
       function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
       function write(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
-      function scan(rows){const seen=read(), now=Date.now();unseen=new Set();latest.clear();for(const r of rows){const sec=sectionLabel(r.section),t=Date.parse(r.created_at||'');if(!Number.isFinite(t))continue;latest.set(sec,Math.max(latest.get(sec)||0,t));if(now-t<=24*60*60*1000 && t>(Number(seen[sec])||0))unseen.add(sec)} update();}
+      function scan(rows){const seen=read(), now=Date.now();unseen=new Set();latest.clear();for(const r of rows){const sec=sectionLabel(r.section),t=Date.parse(r.created_at||'');if(!Number.isFinite(t))continue;latest.set(sec,Math.max(latest.get(sec)||0,t));if(now-t<=14*60*60*1000 && t>(Number(seen[sec])||0))unseen.add(sec)} update();}
       function update(){const dot=document.getElementById('bvDashboardDot'),menu=document.getElementById('sideMenu');if(dot)dot.style.display=unseen.size?'inline-block':'none';if(menu){menu.querySelectorAll('.bv-menu-notify').forEach(e=>e.remove());menu.querySelectorAll('a').forEach(a=>{const t=String(a.textContent||'');const hit=[['Bio-News','news'],['Bio-Journal Club','journal'],['Bio-Lab','lab'],['Bio-Media','media'],['Bio-Company','company'],['BioTalk','biotalk'],['کارگاه','workshop']].find(([label])=>t.includes(label));if(hit&&unseen.has(hit[0])){const d=document.createElement('span');d.className='bv-menu-notify';a.appendChild(d)}})}}
       function mark(sec){const label=sectionLabel(sec),o=read();o[label]=latest.get(label)||Date.now();write(o);unseen.delete(label);update();}
       return {scan,update,mark,isUnseen:s=>unseen.has(sectionLabel(s))};
@@ -910,7 +904,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 <div class="bv-event-actions"><button type="button" class="bv-event-btn bv-event-primary" onclick="BVEventsAdmin.create()">ثبت رویداد</button><button type="button" class="bv-event-btn bv-event-muted" onclick="BVEventsAdmin.reload()">بازخوانی</button></div>
 <div id="bvEventAdminStatus" class="bv-admin-status"></div><div id="bvEventAdminList" style="margin-top:12px"></div>
 </section>
-<section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" class="bv-content-description-input" rows="9" placeholder="توضیحات کامل محتوا را اینجا بنویسید"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
+<section id="bvAdminContentSection"><h3>انتشار محتوا</h3><div class="bv-admin-row"><select id="bvContentSection"><option>Bio-News</option><option>Bio-Journal Club</option><option>BioTalk</option><option>کارگاه</option><option>Bio-Lab</option><option>Bio-Media</option><option>Bio-Company</option></select><input id="bvContentTitle" placeholder="عنوان محتوا"></div><textarea id="bvContentDescription" class="bv-content-description-input" rows="9" placeholder="توضیحات کامل محتوا را اینجا بنویسید"></textarea><div class="bv-admin-row" style="margin-top:10px"><div class="bv-admin-half"><label>🖼️ تصاویر</label><input id="bvContentImages" type="file" accept="image/*" multiple><div id="bvContentImagesPreview" class="bv-admin-sub">چند تصویر قابل انتخاب است.</div></div><div class="bv-admin-half"><label>📎 فایل‌ها</label><input id="bvContentFiles" type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"><div id="bvContentFilesPreview" class="bv-admin-sub">PDF، Word، PowerPoint و Excel.</div></div></div><input id="bvContentLink" placeholder="لینک محتوا" style="margin-top:10px"><button class="bv-admin-btn bv-admin-primary" style="margin-top:12px" onclick="BVOriginalAdmin.publishContent()">انتشار محتوا</button><div id="bvContentList" style="margin-top:18px"></div></section>
 </div></div>
 
 <script id="biovibe-superadmin-js">
@@ -1427,6 +1421,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const r=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
     if(r.error){console.warn('event list',r.error.message);return;}
     const rows=Array.isArray(r.data)?r.data:[];
+    window.__bvEventsById=new Map(rows.map(e=>[String(e.id),e]));
     window.__bvEventLatest={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=window.__bvEventLatest[e.event_type]||String(e.created_at||'');});
     syncEventNotice(rows);
     for(const [t,id] of Object.entries(typeToContainer)){
@@ -1452,48 +1447,66 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     try{const r=await supabaseClient.rpc('biovibe_admin_access'); ok=!r.error&&r.data===true;}catch(e){try{const r2=await supabaseClient.rpc('biovive_admin_access');ok=!r2.error&&r2.data===true;}catch(e2){const u=(await supabaseClient.auth.getUser()).data?.user;ok=String(u?.email||'').trim().toLowerCase()==='ariakangavari8@gmail.com';}}
     buttons.forEach(b=>b.classList.toggle('visible',ok));
   }
-  async function openRegister(id){
-    // Use the same event list that successfully renders the event card. This avoids
-    // breaking registration when an older get_event RPC is missing/mismatched.
-    try{
-      const lr=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
-      if(!lr.error){
-        const e=(Array.isArray(lr.data)?lr.data:[]).find(x=>String(x.id)===String(id));
-        if(e && active(e)){ openRegisterFromData(e); return; }
-        if(e && !active(e)){ alert('بازه ثبت‌نام این رویداد فعال نیست.'); return; }
-      }
-    }catch(e){}
-    const names=['biovibe_get_event_for_registration','biovive_get_event_for_registration'];
-    for(const name of names){
-      try{
-        const r=await supabaseClient.rpc(name,{p_event_id:String(id)});
-        if(!r.error){openRegisterFromData(r.data);return;}
-      }catch(e){}
-    }
-    alert('ثبت‌نام در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.');
-  }
-  function openRegisterFromData(data){
-    const e=Array.isArray(data)?data[0]:data; if(!e){alert('رویداد پیدا نشد یا بازه ثبت‌نام فعال نیست.');return;}
+  function openRegisterModal(e){
+    if(!e)return;
     selectedEvent=e;
-    $('bvEventRegisterTitle').textContent=e.title||'';
-    $('bvEventRegisterStatus').textContent='نام، نام خانوادگی و رشته را وارد کنید.';
-    $('bvRegFirst').value='';$('bvRegLast').value='';$('bvRegMajor').value='';
-    $('bvEventRegisterModal').style.display='block';document.body.style.overflow='hidden';
+    const modal=$('bvEventRegisterModal');
+    const title=$('bvEventRegisterTitle');
+    const status=$('bvEventRegisterStatus');
+    if(title)title.textContent='ثبت‌نام در '+(e.title||'رویداد');
+    if(status){status.style.display='none';status.textContent='';}
+    ['bvRegFirst','bvRegLast','bvRegMajor'].forEach(id=>{const x=$(id);if(x)x.value='';});
+    if(modal){modal.style.display='block';modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
   }
-  function closeRegister(){$('bvEventRegisterModal').style.display='none';document.body.style.overflow='';selectedEvent=null;}
+  async function openRegister(id){
+    try{
+      let e=window.__bvEventsById?.get(String(id));
+      if(!e){
+        const lr=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
+        if(lr.error)throw lr.error;
+        const rows=Array.isArray(lr.data)?lr.data:[];
+        e=rows.find(x=>String(x.id)===String(id));
+        if(e){
+          if(!window.__bvEventsById)window.__bvEventsById=new Map();
+          window.__bvEventsById.set(String(e.id),e);
+        }
+      }
+      if(!e){alert('رویداد پیدا نشد. لطفاً صفحه را تازه کنید.');return;}
+      if(!active(e)){alert('بازه ثبت‌نام این رویداد فعال نیست.');return;}
+      openRegisterModal(e);
+    }catch(err){
+      console.error('BVEvents.openRegister',err);
+      alert('باز کردن فرم ثبت‌نام با خطا مواجه شد. لطفاً صفحه را تازه کنید و دوباره امتحان کنید.');
+    }
+  }
+  function closeRegister(){const m=$('bvEventRegisterModal');if(m){m.style.display='none';m.setAttribute('aria-hidden','true');}document.body.style.overflow='';selectedEvent=null;}
   async function submitRegistration(){
     if(!selectedEvent){alert('ابتدا یک رویداد را انتخاب کنید.');return;}
     const a=$('bvRegFirst').value.trim(),b=$('bvRegLast').value.trim(),c=$('bvRegMajor').value.trim();
     if(!a||!b||!c){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
     const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
-    let r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
-    if(r.error){
-      const r2=await supabaseClient.rpc('biovive_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
-      if(!r2.error) r=r2;
-    }
-    btn.disabled=false;btn.textContent='ثبت‌نام';
-    if(r.error){alert(r.error.message||'ثبت‌نام ناموفق بود.');return;}
-    closeRegister();alert('ثبت‌نام با موفقیت انجام شد. اکنون لینک رویداد برای شما نمایش داده می‌شود.');await loadPublic();
+    try{
+      const u=(await supabaseClient.auth.getUser()).data?.user;
+      if(!u){alert('برای ثبت‌نام ابتدا وارد حساب شوید.');return;}
+      // Direct database insert is the primary path; this removes dependency on legacy RPC names.
+      let r=await supabaseClient.from('biovibe_event_registrations').upsert({
+        event_id:String(selectedEvent.id),user_id:u.id,first_name:a,last_name:b,major:c
+      },{onConflict:'event_id,user_id'});
+      if(r.error){
+        // Fallback to the RPC for databases that intentionally restrict direct inserts.
+        r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
+        if(r.error){
+          const r2=await supabaseClient.rpc('biovive_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});
+          if(!r2.error) r=r2;
+        }
+      }
+      if(r.error)throw r.error;
+      closeRegister();
+      alert('ثبت‌نام با موفقیت انجام شد. اکنون لینک رویداد برای شما نمایش داده می‌شود.');
+      await loadPublic();
+    }catch(e){
+      alert(e?.message||'ثبت‌نام ناموفق بود.');
+    }finally{btn.disabled=false;btn.textContent='ثبت‌نام';}
   }
   async function openAdminList(id){
     try{
@@ -1511,7 +1524,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const body=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(x.email||'')}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join(''):`<tr><td colspan="6">هنوز کسی ثبت‌نام نکرده است.</td></tr>`;
     const w=window.open('','_blank','width=1000,height=750');
     if(!w){alert('پنجرهٔ نمایش فهرست توسط مرورگر مسدود شده است.');return;}
-    w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Tahoma,sans-serif;padding:28px;color:#111}h2{margin:0 0 18px}button{padding:9px 16px;margin-bottom:16px;cursor:pointer}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>${esc(title)}</h2><button onclick="window.print()">🖨️ چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>ایمیل</th><th>زمان ثبت‌نام</th></tr></thead><tbody>${body}</tbody></table></body></html>`);
+    w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Tahoma,sans-serif;padding:28px;color:#111}h2{margin:0 0 18px}button{padding:9px 16px;margin-bottom:16px;cursor:pointer}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>'+esc(title)+'</h2><button onclick="window.print()">🖨️ چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>ایمیل</th><th>زمان ثبت‌نام</th></tr></thead><tbody>'+body+'</tbody></table></body></html>');
     w.document.close();
   }
   async function loadAdmin(){
@@ -1613,6 +1626,107 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   const oldAdminOpen=window.BVOriginalAdmin?.open; if(oldAdminOpen && !window.__bvEventAdminHooked){ window.__bvEventAdminHooked=true; window.BVOriginalAdmin.open=async function(){ const r=await oldAdminOpen.apply(this,arguments); try{ if(window.BVEventsAdmin?.load) await window.BVEventsAdmin.load(); }catch(e){} return r; }; }
   if(supabaseClient?.auth)supabaseClient.auth.onAuthStateChange(()=>setTimeout(setHeader,100));
   document.addEventListener('DOMContentLoaded',()=>setTimeout(setHeader,100));window.addEventListener('load',()=>setTimeout(setHeader,100));[300,1000,2500,5000].forEach(t=>setTimeout(setHeader,t));
+})();
+</script>
+<script id="bv-final-stable-admin-and-registration-fix">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  const $=id=>document.getElementById(id);
+  let signedOut=false;
+  let cachedAdmin=false;
+  let cachedPrimary=false;
+  let booted=false;
+
+  async function readUser(){
+    try{return (await supabaseClient.auth.getSession()).data?.session?.user||null}catch(e){return null}
+  }
+  async function detect(){
+    const u=await readUser();
+    if(!u){signedOut=true;cachedAdmin=false;cachedPrimary=false;return {primary:false,admin:false,user:null};}
+    signedOut=false;
+    const email=norm(u.email||u.user_metadata?.email||'');
+    const primary=email===PRIMARY;
+    if(primary){cachedPrimary=true;cachedAdmin=true;}
+    if(!primary && !cachedAdmin){
+      try{const r=await supabaseClient.rpc('biovibe_admin_access');if(!r.error&&r.data===true)cachedAdmin=true;}catch(e){}
+    }
+    return {primary:primary||cachedPrimary,admin:primary||cachedAdmin,user:u};
+  }
+  function paint(state){
+    const a=$('bvAdminHeaderBtn');
+    const m=$('bvAdminManagerBtn');
+    if(!a||!m)return;
+    if(signedOut){
+      a.style.setProperty('display','none','important');
+      m.style.setProperty('display','none','important');
+      return;
+    }
+    a.style.setProperty('display',state.admin?'inline-flex':'none','important');
+    m.style.setProperty('display',state.primary?'inline-flex':'none','important');
+    a.style.setProperty('visibility','visible','important');
+    m.style.setProperty('visibility','visible','important');
+  }
+  async function sync(){const st=await detect();paint(st);return st;}
+
+  // Prevent old legacy scripts from hiding or flickering the two real buttons.
+  const obs=new MutationObserver(()=>{
+    if(booted&&!signedOut){
+      const a=$('bvAdminHeaderBtn'),m=$('bvAdminManagerBtn');
+      if(cachedAdmin&&a)a.style.setProperty('display','inline-flex','important');
+      if(cachedPrimary&&m)m.style.setProperty('display','inline-flex','important');
+    }
+  });
+  function boot(){
+    if(booted)return; booted=true;
+    const a=$('bvAdminHeaderBtn'),m=$('bvAdminManagerBtn');
+    if(a)obs.observe(a,{attributes:true,attributeFilter:['style','class']});
+    if(m)obs.observe(m,{attributes:true,attributeFilter:['style','class']});
+    sync();
+  }
+  // Stable manager open: independent of all legacy manager implementations.
+  window.BVAdminManager={
+    async open(){
+      const st=await sync();
+      if(!st.primary){alert('این بخش فقط برای ادمین اصلی است.');return;}
+      const o=$('bvAdminManagerOverlay'); if(o){o.style.display='block';o.setAttribute('aria-hidden','false');}
+      await this.load();
+    },
+    close(){const o=$('bvAdminManagerOverlay');if(o){o.style.display='none';o.setAttribute('aria-hidden','true');}},
+    async load(){
+      const st=await sync(); if(!st.primary)return;
+      const b=$('bvAdminManagerList'); if(!b)return;
+      b.innerHTML='<div style="color:#b9d7da">در حال بارگذاری...</div>';
+      let r=await supabaseClient.rpc('biovibe_list_admins');
+      if(r.error)r=await supabaseClient.rpc('list_admins');
+      if(r.error){b.innerHTML='<div style="color:#ff9aaa;line-height:1.8">'+String(r.error.message||r.error)+'</div>';return;}
+      const rows=Array.isArray(r.data)?r.data:[];
+      b.innerHTML=(rows.filter(x=>x?.email).map(x=>{
+        const e=norm(x.email),main=e===PRIMARY;
+        return '<div class="bv-am-item"><div class="bv-am-email"><b>'+String(x.email).replace(/[&<>]/g,'')+'</b><div style="font-size:12px;color:#b9d7da">'+String(x.role||'admin')+(main?' · ادمین اصلی':'')+'</div></div>'+
+          (main?'<button class="bv-am-btn bv-am-muted" disabled>ادمین اصلی</button>':'<button class="bv-am-btn bv-am-danger" onclick="BVAdminManager.remove('+JSON.stringify(e)+')">حذف</button>')+'</div>';
+      }).join(''))||'<div style="color:#b9d7da">ادمین دیگری ثبت نشده است.</div>';
+    },
+    async add(){
+      const st=await sync();if(!st.primary)return alert('فقط ادمین اصلی اجازه دارد.');
+      const i=$('bvAdminManagerEmail'),e=norm(i?.value);if(!e)return alert('ایمیل کاربر را وارد کنید.');
+      let r=await supabaseClient.rpc('biovibe_add_admin_by_email',{p_email:e});
+      if(r.error)r=await supabaseClient.rpc('set_admin_by_email',{p_email:e});
+      const box=$('bvAdminManagerStatus');if(r.error){if(box){box.style.display='block';box.textContent=r.error.message||String(r.error);}return;}
+      if(i)i.value='';if(box){box.style.display='block';box.textContent='ادمین با موفقیت اضافه شد.';}await this.load();
+    },
+    async remove(e){
+      const st=await sync();if(!st.primary)return alert('فقط ادمین اصلی اجازه دارد.');e=norm(e);if(!e||e===PRIMARY)return;
+      if(!confirm('ادمین «'+e+'» حذف شود؟'))return;
+      let r=await supabaseClient.rpc('biovibe_remove_admin_by_email',{p_email:e});
+      if(r.error)r=await supabaseClient.rpc('remove_admin_by_email',{p_email:e});
+      const box=$('bvAdminManagerStatus');if(r.error){if(box){box.style.display='block';box.textContent=r.error.message||String(r.error);}return;}
+      if(box){box.style.display='block';box.textContent='دسترسی ادمین حذف شد.';}await this.load();
+    }
+  };
+  if(supabaseClient?.auth){supabaseClient.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT'){signedOut=true;cachedAdmin=false;cachedPrimary=false;}setTimeout(sync,40);});}
+  document.addEventListener('DOMContentLoaded',boot);window.addEventListener('load',boot);
+  [100,300,800,1500,3000].forEach(t=>setTimeout(sync,t));
 })();
 </script>
 </body>
