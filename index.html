@@ -1429,7 +1429,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const r=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
     if(r.error){console.warn('event list',r.error.message);return;}
     const rows=Array.isArray(r.data)?r.data:[];
-    window.__bvEventLatest={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=Math.max(Number(window.__bvEventLatest[e.event_type]||0),Date.parse(e.created_at||'')||0);});
+    window.__bvEventLatest={}; window.__bvEventsById={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=Math.max(Number(window.__bvEventLatest[e.event_type]||0),Date.parse(e.created_at||'')||0); window.__bvEventsById[String(e.id)]=e;});
     syncEventNotice(rows);
     for(const [t,id] of Object.entries(typeToContainer)){
       const box=$(id); if(!box)continue;
@@ -1440,7 +1440,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const recentBox=$('recent-home-container'), recentWrap=$('bvRecentHome');
     if(recentBox){
       const cut=Date.now()-48*60*60*1000;
-      const recentEvents=rows.filter(e=>{const t=Date.parse(e.created_at||'');return Number.isFinite(t)&&t>=cut;});
+      const recentEvents=rows.filter(e=>{const t=Date.parse(e.created_at||'');return (e.event_type==='BioTalk'||e.event_type==='کارگاه')&&Number.isFinite(t)&&t>=cut;});
       const cards=recentEvents.map(e=>renderRecentEvent(e)).join('');
       recentBox.querySelectorAll('.bv-recent-event').forEach(el=>el.remove());
       if(cards){const tagged=cards.replaceAll('class="bv-summary-card"','class="bv-summary-card bv-recent-event"');recentBox.insertAdjacentHTML('beforeend',tagged);if(activePage==='home'&&recentWrap)recentWrap.style.display='block';}
@@ -1469,19 +1469,18 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     buttons.forEach(b=>b.classList.toggle('visible',ok));
   }
   async function openRegister(id){
-    let eventData=null;
+    // Open the form from the exact event already loaded on the page.
+    // The form itself is not blocked by the registration window; the final save is.
+    const cached=window.__bvEventsById?.[String(id)];
+    if(cached){openRegisterFromData(cached);return;}
     try{
-      const q=await supabaseClient.from('biovibe_events').select('id,event_type,title,description,registration_start,registration_end,event_link,image_url,created_at').eq('id',id).maybeSingle();
-      if(!q.error && q.data) eventData=q.data;
-    }catch(e){}
-    if(!eventData){
-      const names=['biovibe_get_event_for_registration','biovive_get_event_for_registration'];
-      for(const name of names){
-        try{const r=await supabaseClient.rpc(name,{p_event_id:String(id)});if(!r.error&&r.data){eventData=Array.isArray(r.data)?r.data[0]:r.data;break;}}catch(e){}
+      const r=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
+      if(!r.error){
+        const e=(Array.isArray(r.data)?r.data:[]).find(x=>String(x.id)===String(id));
+        if(e){openRegisterFromData(e);return;}
       }
-    }
-    if(!eventData){alert('اطلاعات این رویداد پیدا نشد.');return;}
-    openRegisterFromData(eventData);
+    }catch(e){}
+    alert('اطلاعات این رویداد پیدا نشد. لطفاً دوباره صفحه را باز کنید.');
   }
   function openRegisterFromData(data){
     const e=Array.isArray(data)?data[0]:data; if(!e){alert('رویداد پیدا نشد یا بازه ثبت‌نام فعال نیست.');return;}
@@ -1494,26 +1493,38 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   function closeRegister(){$('bvEventRegisterModal').style.display='none';document.body.style.overflow='';selectedEvent=null;}
   async function submitRegistration(){
     if(!selectedEvent){alert('ابتدا یک رویداد را انتخاب کنید.');return;}
-    const a=$('bvRegFirst').value.trim(),b=$('bvRegLast').value.trim(),c=$('bvRegMajor').value.trim();
-    if(!a||!b||!c){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
+    const first=$('bvRegFirst').value.trim(), last=$('bvRegLast').value.trim(), major=$('bvRegMajor').value.trim();
+    if(!first||!last||!major){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
     const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
-    let success=false, link=selectedEvent.event_link||'';
-    let r=null;
-    try{r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:a,p_last_name:b,p_major:c});}catch(e){}
-    if(r && !r.error){success=true; if(r.data?.link)link=r.data.link;}
-    if(!success){
+    let ok=false, link=selectedEvent.event_link||'', errMsg='';
+    // Preferred: SECURITY DEFINER RPC. It bypasses table RLS safely and validates the event window.
+    try{
+      const r=await supabaseClient.rpc('biovibe_register_event_v2',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+      if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}
+      else errMsg=r.error.message||'';
+    }catch(e){errMsg=e.message||'';}
+    // Backward compatibility with the existing RPC.
+    if(!ok){
       try{
-        const start=Date.parse(selectedEvent.registration_start||''), end=Date.parse(selectedEvent.registration_end||'');
-        if(Number.isFinite(start)&&Number.isFinite(end)&&(Date.now()<start||Date.now()>end)) throw new Error('بازه ثبت‌نام این رویداد فعال نیست.');
+        const r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+        if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}
+        else errMsg=r.error.message||errMsg;
+      }catch(e){errMsg=e.message||errMsg;}
+    }
+    // Last fallback: direct insert for databases that expose the table to authenticated users.
+    if(!ok){
+      try{
+        const startAt=Date.parse(selectedEvent.registration_start||''), endAt=Date.parse(selectedEvent.registration_end||'');
+        if(Number.isFinite(startAt)&&Number.isFinite(endAt)&&(Date.now()<startAt||Date.now()>endAt)) throw new Error('بازه ثبت‌نام این رویداد فعال نیست.');
         const u=(await supabaseClient.auth.getUser()).data?.user;
         if(!u) throw new Error('ابتدا وارد حساب شوید.');
-        const ins=await supabaseClient.from('biovibe_event_registrations').upsert({event_id:selectedEvent.id,user_id:u.id,first_name:a,last_name:b,major:c},{onConflict:'event_id,user_id'});
-        if(ins.error) throw ins.error;
-        success=true;
-      }catch(e){r={error:e};}
+        const ins=await supabaseClient.from('biovibe_event_registrations').upsert({event_id:selectedEvent.id,user_id:u.id,first_name:first,last_name:last,major},{onConflict:'event_id,user_id'});
+        if(ins.error)throw ins.error;
+        ok=true;
+      }catch(e){errMsg=e.message||errMsg;}
     }
     btn.disabled=false;btn.textContent='ثبت‌نام';
-    if(!success){alert(r?.error?.message||'ثبت‌نام ناموفق بود.');return;}
+    if(!ok){alert(errMsg||'ثبت‌نام انجام نشد. لطفاً دوباره تلاش کنید.');return;}
     closeRegister();
     alert('ثبت‌نام با موفقیت انجام شد. لینک رویداد اکنون برای شما قابل مشاهده است.');
     await loadPublic();
