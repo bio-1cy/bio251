@@ -268,6 +268,34 @@
 
     .backBtn{margin-top:40px;background:linear-gradient(90deg,var(--accent),var(--pink));border:none;padding:10px 20px;border-radius:20px;cursor:pointer;color:#041014;font-weight:700;box-shadow:0 0 18px rgba(255,143,200,.12);}
 
+
+/* BioVibe intelligent search */
+.bv-search-section{max-width:1120px;margin:18px auto 8px;padding:0 18px;position:relative;z-index:8}
+.bv-search-box{display:flex;align-items:center;gap:8px;background:rgba(8,20,28,.88);border:1px solid rgba(0,234,255,.25);border-radius:18px;padding:8px 10px;box-shadow:0 12px 35px rgba(0,0,0,.16);backdrop-filter:blur(10px)}
+.bv-search-icon{font-size:25px;line-height:1;color:#74f2e7;padding:0 5px}
+#bvSearchInput{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#eefcff;font-size:15px;padding:11px 4px;font-family:inherit}
+#bvSearchInput::placeholder{color:rgba(220,238,240,.58)}
+#bvSearchBtn,#bvSearchClear{border:0;border-radius:12px;cursor:pointer;font-family:inherit}
+#bvSearchBtn{padding:10px 18px;background:#74f2e7;color:#071318;font-weight:900}
+#bvSearchClear{display:none;background:transparent;color:#b9dadd;font-size:25px;line-height:1;padding:4px 8px}
+.bv-search-results{margin-top:10px;background:rgba(6,16,24,.97);border:1px solid rgba(0,234,255,.22);border-radius:18px;padding:14px;max-height:min(68vh,620px);overflow:auto;box-shadow:0 18px 45px rgba(0,0,0,.28)}
+.bv-search-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;color:#dff8fa}
+.bv-search-head strong{color:#74f2e7}
+.bv-search-list{display:grid;gap:9px}
+.bv-search-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 13px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.035)}
+.bv-search-item-main{min-width:0}
+.bv-search-item-title{font-weight:900;color:#f0ffff;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bv-search-item-meta{font-size:12px;color:#91b9be}
+.bv-search-item-snippet{font-size:13px;color:#c6dfe1;margin-top:5px;line-height:1.7}
+.bv-search-open{flex:0 0 auto;border:1px solid rgba(116,242,231,.35);background:transparent;color:#74f2e7;border-radius:10px;padding:8px 12px;cursor:pointer;font-family:inherit;font-weight:800}
+.bv-search-empty{padding:22px 8px;text-align:center;color:#abc6c9;line-height:2}
+@media(max-width:600px){
+  .bv-search-section{padding:0 12px;margin-top:12px}
+  .bv-search-box{border-radius:15px}
+  #bvSearchBtn{padding:9px 12px}
+  .bv-search-item{align-items:flex-start;flex-direction:column}
+  .bv-search-open{width:100%}
+}
 </style>
 <style id="biovibe-responsive-fix">
 html,body{width:100%;max-width:100%;min-height:100%;}
@@ -425,7 +453,6 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 .bv-event-desc{white-space:pre-wrap;line-height:1.9;color:#dceef0;overflow-wrap:anywhere;word-break:break-word}
 .bv-event-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .bv-event-btn{border:0;border-radius:11px;padding:9px 13px;font-family:inherit;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-.bv-event-actions,.bv-event-actions .bv-event-btn{position:relative;z-index:3;pointer-events:auto}
 .bv-event-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#041014}
 .bv-event-muted{background:#16363b;color:#fff}
 .bv-event-link{color:#8ff8f0}
@@ -524,6 +551,16 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         <a onclick="openPage('biotalk')">BioTalk</a>
         <a onclick="openPage('workshop')">کارگاه</a>
     </div>
+
+    <section id="bvSearchSection" class="bv-search-section" aria-label="جستجوی محتوا">
+        <div class="bv-search-box">
+            <span class="bv-search-icon" aria-hidden="true">⌕</span>
+            <input id="bvSearchInput" type="search" dir="rtl" autocomplete="off" placeholder="جستجوی محتوا، عنوان، موضوع یا رویداد..." aria-label="جستجوی محتوا">
+            <button id="bvSearchClear" type="button" onclick="BVSearch.clear()" aria-label="پاک کردن جستجو">×</button>
+            <button id="bvSearchBtn" type="button" onclick="BVSearch.run()">جستجو</button>
+        </div>
+        <div id="bvSearchResults" class="bv-search-results" hidden></div>
+    </section>
 
     <section id="heroSection" class="hero">
         <div class="virus v1"></div><div class="virus v2"></div>
@@ -741,6 +778,100 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         window.scrollTo(0,0);
     }
     const contentStore = new Map();
+    /* Intelligent fuzzy search: title is weighted highest, then section/description. */
+    window.BVSearch=(function(){
+      const $=id=>document.getElementById(id);
+      let timer=null;
+      function norm(v){
+        return String(v??'').toLowerCase()
+          .replace(/ي/g,'ی').replace(/ى/g,'ی').replace(/ك/g,'ک')
+          .replace(/ۀ/g,'ه').replace(/ة/g,'ه').replace(/ؤ/g,'و').replace(/إ|أ|آ/g,'ا')
+          .replace(/[ًٌٍَُِّْـ]/g,'').replace(/[^\p{L}\p{N}\s-]/gu,' ')
+          .replace(/\s+/g,' ').trim();
+      }
+      function tokens(v){return norm(v).split(/\s+/).filter(x=>x.length>0);}
+      function lev(a,b){
+        if(a===b)return 0;if(!a)return b.length;if(!b)return a.length;
+        let prev=Array.from({length:b.length+1},(_,i)=>i);
+        for(let i=0;i<a.length;i++){
+          const cur=[i+1];
+          for(let j=0;j<b.length;j++) cur.push(Math.min(cur[j]+1,prev[j+1]+1,prev[j]+(a[i]===b[j]?0:1)));
+          prev=cur;
+        }
+        return prev[b.length];
+      }
+      function score(query,item){
+        const q=tokens(query); if(!q.length)return 0;
+        const title=tokens(item.title), sec=tokens(item.section), desc=tokens(item.description);
+        let total=0, hits=0;
+        for(const qt of q){
+          let best=0;
+          for(const tt of title){
+            if(tt===qt){best=Math.max(best,100);continue;}
+            if(tt.includes(qt)||qt.includes(tt))best=Math.max(best,72);
+            else {const d=lev(qt,tt);if(d<=2||d<=Math.max(1,Math.floor(qt.length*.3)))best=Math.max(best,58-d*8);}
+          }
+          for(const st of sec){
+            if(st.includes(qt)||qt.includes(st))best=Math.max(best,42);
+          }
+          for(const dt of desc){
+            if(dt===qt)best=Math.max(best,38);
+            else if(dt.includes(qt)||qt.includes(dt))best=Math.max(best,25);
+            else {const d=lev(qt,dt);if(d<=1&&qt.length>=4)best=Math.max(best,16);}
+          }
+          if(best>0){hits++;total+=best;}
+        }
+        // Bonus for matching the whole phrase and for multiple query terms.
+        const nq=norm(query), nt=norm(item.title), nd=norm(item.description);
+        if(nt.includes(nq)) total+=90;
+        if(nd.includes(nq)) total+=30;
+        if(hits===q.length) total+=25;
+        return hits?total:0;
+      }
+      function snippet(text,query){
+        const raw=String(text??'').replace(/\s+/g,' ').trim(); if(!raw)return '';
+        const q=tokens(query).sort((a,b)=>b.length-a.length)[0];
+        const n=norm(raw); const idx=q?n.indexOf(q):-1;
+        if(idx>45)return '…'+raw.slice(Math.max(0,idx-45),idx+115)+'…';
+        return raw.length>160?raw.slice(0,160)+'…':raw;
+      }
+      function allItems(){
+        const out=[];
+        contentStore.forEach(x=>out.push({kind:'content',id:String(x.id),title:x.title||'بدون عنوان',section:sectionLabel(x.section),description:x.description||'',raw:x}));
+        const ev=window.__bvEventsById||{};
+        Object.values(ev).forEach(x=>out.push({kind:'event',id:String(x.id),title:x.title||'بدون عنوان',section:x.event_type||'رویداد',description:x.description||'',raw:x}));
+        return out;
+      }
+      function open(item){
+        if(item.kind==='content'){renderFullContent(item.raw);return;}
+        openPage(item.raw.event_type==='BioTalk'?'biotalk':'workshop');
+      }
+      function render(query){
+        const box=$('bvSearchResults'),input=$('bvSearchInput'),clear=$('bvSearchClear');
+        if(!box||!input)return;
+        const q=String(query??input.value??'').trim();
+        if(clear)clear.style.display=q?'block':'none';
+        if(!q){box.hidden=true;box.innerHTML='';return;}
+        const results=allItems().map(x=>({...x,score:score(q,x)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,20);
+        box.hidden=false;
+        box.innerHTML='<div class="bv-search-head"><span>نتایج نزدیک به <strong>'+safe(q)+'</strong></span><span>'+results.length+' نتیجه</span></div>'+
+          (results.length?'<div class="bv-search-list">'+results.map((x,i)=>'<div class="bv-search-item"><div class="bv-search-item-main"><div class="bv-search-item-title">'+safe(x.title)+'</div><div class="bv-search-item-meta">'+safe(x.section)+'</div><div class="bv-search-item-snippet">'+safe(snippet(x.description,q))+'</div></div><button type="button" class="bv-search-open" data-search-index="'+i+'">مشاهده</button></div>').join(''):'<div class="bv-search-empty">محتوای مشابهی پیدا نشد.<br>عنوان، موضوع یا چند کلمهٔ دیگر را امتحان کنید.</div>');
+        if(results.length){
+          box.querySelectorAll('[data-search-index]').forEach(btn=>btn.addEventListener('click',()=>{const x=results[Number(btn.dataset.searchIndex)];if(x){open(x);box.hidden=true;}}));
+        }
+      }
+      function run(){render($('bvSearchInput')?.value||'');}
+      function clear(){const i=$('bvSearchInput');if(i)i.value='';render('');if(i)i.focus();}
+      function init(){
+        const i=$('bvSearchInput'); if(!i)return;
+        i.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>render(i.value),180);});
+        i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run();}if(e.key==='Escape')clear();});
+      }
+      document.addEventListener('DOMContentLoaded',init);
+      window.addEventListener('load',init);
+      return {run,clear,render};
+    })();
+
     function arr(v){if(Array.isArray(v))return v;if(typeof v==='string'){try{const x=JSON.parse(v);return Array.isArray(x)?x:[v]}catch(_){return v?[v]:[]}}return []}
     function imageUrls(x){let a=arr(x.image_urls);if(!a.length&&x.image_url)a=[x.image_url];return a.map(v=>typeof v==='string'?v:(v&&v.url)||'').filter(Boolean)}
     function fileUrls(x){return arr(x.attachment_urls).map(v=>typeof v==='string'?{name:'دریافت فایل',url:v}:{name:v?.name||'دریافت فایل',url:v?.url||''}).filter(v=>v.url)}
@@ -820,6 +951,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
           if(c.recent)c.recent.innerHTML=recent.map(renderSummaryContent).join('');
         }
 
+        if(window.BVSearch){const si=document.getElementById('bvSearchInput');if(si&&si.value)window.BVSearch.render(si.value);}
         // Registration events
         try{ await BVEvents.loadPublic(); }catch(e){ console.error(e); }
       }catch(e){console.error(e);Object.values(c).forEach(el=>{if(el&&el!==c.recentWrap)el.innerHTML='<div class="bv-empty">خطا در بارگذاری محتوا.</div>'});if(c.recentWrap)c.recentWrap.style.display='none'}
@@ -1431,7 +1563,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const menu=$('sideMenu'); if(menu){[...menu.querySelectorAll('a')].filter(x=>String(x.textContent||'').includes(type)).forEach(a=>a.querySelectorAll('.bv-event-notify').forEach(n=>n.remove()));}
   }
   async function loadPublic(){
-    const r=await supabaseClient.rpc('bv_event_public_list',{p_type:null});
+    const r=await supabaseClient.rpc('bv_reg_event_list',{p_type:null});
     if(r.error){console.warn('event list',r.error.message);return;}
     const rows=Array.isArray(r.data)?r.data:[];
     window.__bvEventLatest={}; window.__bvEventsById={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=Math.max(Number(window.__bvEventLatest[e.event_type]||0),Date.parse(e.created_at||'')||0); window.__bvEventsById[String(e.id)]=e;});
@@ -1459,36 +1591,22 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     return `<article class="bv-summary-card"><div>${image}</div>${badge}<h3>${esc(e.title||'')}</h3><p class="bv-summary-excerpt">${esc(e.description||'')}</p><div class="bv-summary-actions">${action}<button type="button" class="bv-more-btn" onclick="openPage('${e.event_type==='BioTalk'?'biotalk':'workshop'}')">مشاهده</button></div></article>`;
   }
   function renderPublic(e){
-    const isActive=active(e); const registered=!!e.registered_by_me; const canSee=registered && e.event_link;
+    const state=String(e.registration_state||'').toLowerCase();
+    const registered=!!e.registered_by_me; const canSee=registered && e.event_link;
     let action='';
-    if(registered){action=canSee?`<a class="bv-event-btn bv-event-primary bv-event-link" href="${esc(e.event_link)}" target="_blank" rel="noopener">ورود به لینک رویداد</a>`:'<span class="bv-event-badge">ثبت‌نام شما ثبت شده است</span>';}
-    else action=`<button type="button" class="bv-event-btn bv-event-primary bv-register-trigger" data-event-id="${esc(e.id)}">ثبت‌نام</button>`;
-    const adminBtn=`<button type="button" class="bv-event-btn bv-event-admin-list" data-event-id="${esc(e.id)}">📋 لیست ثبت‌نام‌کنندگان</button>`;
+    if(registered){
+      action=canSee?`<a class="bv-event-btn bv-event-primary bv-event-link" href="${esc(e.event_link)}" target="_blank" rel="noopener">ورود به لینک رویداد</a>`:'<span class="bv-event-badge">ثبت‌نام شما ثبت شده است</span>';
+    }else if(state==='active'){
+      action='<button type="button" class="bv-event-btn bv-event-primary" onclick="BVEvents.openRegister('+JSON.stringify(String(e.id))+')">ثبت‌نام</button>';
+    }else if(state==='upcoming'){
+      action='<span class="bv-event-badge">ثبت‌نام هنوز شروع نشده</span>';
+    }else{
+      action='<span class="bv-event-badge">ثبت‌نام بسته است</span>';
+    }
+    const adminBtn=`<button type="button" class="bv-event-btn bv-event-admin-list" data-event-id="${esc(e.id)}" onclick="BVEvents.openAdminList('${esc(e.id)}')">📋 لیست ثبت‌نام‌کنندگان</button>`;
     const image=e.image_url?`<img class="bv-event-image" src="${esc(e.image_url)}" alt="${esc(e.title||'تصویر رویداد')}" loading="lazy">`:'';
     return `<article class="bv-event-card" data-event-id="${esc(e.id)}">${image}<div class="bv-event-meta"><span class="bv-event-badge">${esc(e.event_type)}</span><span>ثبت‌نام: ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</span></div><h3>${esc(e.title)}</h3><div class="bv-event-desc">${esc(e.description||'')}</div><div class="bv-event-actions">${action}${adminBtn}</div></article>`;
   }
-  // Event buttons use delegated listeners instead of inline onclick handlers.
-  // This also works when a strict Content-Security-Policy blocks inline handlers.
-  function bindEventButtons(){
-    if(window.__bvEventButtonsBound)return;
-    window.__bvEventButtonsBound=true;
-    document.addEventListener('click',function(ev){
-      const registerBtn=ev.target.closest?.('.bv-register-trigger');
-      if(registerBtn){
-        ev.preventDefault();
-        const id=registerBtn.getAttribute('data-event-id');
-        if(id) openRegister(id);
-        return;
-      }
-      const adminBtn=ev.target.closest?.('.bv-event-admin-list');
-      if(adminBtn && adminBtn.classList.contains('visible')){
-        ev.preventDefault();
-        const id=adminBtn.getAttribute('data-event-id');
-        if(id) openAdminList(id);
-      }
-    },true);
-  }
-
   async function applyAdminEventButtons(){
     const buttons=[...document.querySelectorAll('.bv-event-admin-list')]; if(!buttons.length)return;
     let ok=false;
@@ -1496,12 +1614,10 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     buttons.forEach(b=>b.classList.toggle('visible',ok));
   }
   async function openRegister(id){
-    // Open the form from the exact event already loaded on the page.
-    // The form itself is not blocked by the registration window; the final save is.
     const cached=window.__bvEventsById?.[String(id)];
     if(cached){openRegisterFromData(cached);return;}
     try{
-      const r=await supabaseClient.rpc('bv_event_public_list',{p_type:null});
+      const r=await supabaseClient.rpc('bv_reg_event_list',{p_type:null});
       if(!r.error){
         const e=(Array.isArray(r.data)?r.data:[]).find(x=>String(x.id)===String(id));
         if(e){openRegisterFromData(e);return;}
@@ -1512,6 +1628,12 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   function openRegisterFromData(data){
     const e=Array.isArray(data)?data[0]:data;
     if(!e){alert('رویداد پیدا نشد.');return;}
+    if(e.registered_by_me){alert('شما قبلاً برای این رویداد ثبت‌نام کرده‌اید.');return;}
+    if(String(e.registration_state||'').toLowerCase()!=='active'){
+      const msg=String(e.registration_state||'')==='upcoming'?'ثبت‌نام این رویداد هنوز شروع نشده است.':'ثبت‌نام این رویداد به پایان رسیده است.';
+      alert(msg);
+      return;
+    }
     selectedEvent=e;
     $('bvEventRegisterTitle').textContent=e.title||'';
     $('bvEventRegisterStatus').textContent='نام، نام خانوادگی و رشته را وارد کنید.';
@@ -1523,13 +1645,18 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   function closeRegister(){const m=$('bvEventRegisterModal');if(m)m.style.display='none';document.body.style.overflow='';selectedEvent=null;}
   async function submitRegistration(){
     if(!selectedEvent){alert('رویداد انتخاب نشده است.');return;}
+    if(String(selectedEvent.registration_state||'').toLowerCase()!=='active'){
+      closeRegister();
+      alert(String(selectedEvent.registration_state||'').toLowerCase()==='upcoming'?'ثبت‌نام این رویداد هنوز شروع نشده است.':'ثبت‌نام این رویداد به پایان رسیده است.');
+      return;
+    }
     const first=$('bvRegFirst').value.trim(),last=$('bvRegLast').value.trim(),major=$('bvRegMajor').value.trim();
     if(!first||!last||!major){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
     const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
     const status=$('bvEventRegisterStatus');
     let ok=false,link=selectedEvent.event_link||'',err='';
     try{
-      const r=await supabaseClient.rpc('bv_event_register',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+      const r=await supabaseClient.rpc('bv_reg_submit',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
       if(!r.error){ok=true;if(typeof r.data==='string')link=r.data;else {const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}}else err=r.error.message||'';
     }catch(e){err=e.message||'';}
     btn.disabled=false;btn.textContent='تکمیل ثبت‌نام';
@@ -1545,7 +1672,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
       const a=await supabaseClient.rpc('biovibe_admin_access');
       if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}
     }catch(e){alert('دسترسی ادمین قابل بررسی نیست.');return;}
-    let r=await supabaseClient.rpc('bv_event_admin_registrations',{p_event_id:String(id)});
+    let r=await supabaseClient.rpc('bv_reg_admin_registrations',{p_event_id:String(id)});
     if(r.error){alert(r.error.message||'دریافت فهرست ثبت‌نام‌کنندگان ناموفق بود.');return;}
     const rows=Array.isArray(r.data)?r.data:[];
     const title=rows[0]?.event_title||'فهرست ثبت‌نام‌کنندگان';
@@ -1599,7 +1726,6 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const body=rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join('');
     w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Tahoma,sans-serif;padding:30px}h2{margin-bottom:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>'+esc(title)+'</h2><button onclick="window.print()">چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>زمان ثبت‌نام</th></tr></thead><tbody>'+body+'</tbody></table></body></html>');w.document.close();
   }
-  bindEventButtons();
   window.BVEvents={openRegister,closeRegister,submitRegistration,loadPublic,markEventNotice,openAdminList};
   window.BVEventsAdmin={create,reload,delete:remove,print,load:loadAdmin};
   if(window.supabaseClient?.auth) supabaseClient.auth.onAuthStateChange(()=>setTimeout(()=>{loadPublic();loadAdmin();},200));
