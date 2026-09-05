@@ -425,6 +425,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 .bv-event-desc{white-space:pre-wrap;line-height:1.9;color:#dceef0;overflow-wrap:anywhere;word-break:break-word}
 .bv-event-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .bv-event-btn{border:0;border-radius:11px;padding:9px 13px;font-family:inherit;font-weight:800;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.bv-event-actions,.bv-event-actions .bv-event-btn{position:relative;z-index:3;pointer-events:auto}
 .bv-event-primary{background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#041014}
 .bv-event-muted{background:#16363b;color:#fff}
 .bv-event-link{color:#8ff8f0}
@@ -1461,11 +1462,33 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const isActive=active(e); const registered=!!e.registered_by_me; const canSee=registered && e.event_link;
     let action='';
     if(registered){action=canSee?`<a class="bv-event-btn bv-event-primary bv-event-link" href="${esc(e.event_link)}" target="_blank" rel="noopener">ورود به لینک رویداد</a>`:'<span class="bv-event-badge">ثبت‌نام شما ثبت شده است</span>';}
-    else action='<button type="button" class="bv-event-btn bv-event-primary" onclick="BVEvents.openRegister('+JSON.stringify(String(e.id))+')">ثبت‌نام</button>';
-    const adminBtn=`<button type="button" class="bv-event-btn bv-event-admin-list" data-event-id="${esc(e.id)}" onclick="BVEvents.openAdminList('${esc(e.id)}')">📋 لیست ثبت‌نام‌کنندگان</button>`;
+    else action=`<button type="button" class="bv-event-btn bv-event-primary bv-register-trigger" data-event-id="${esc(e.id)}">ثبت‌نام</button>`;
+    const adminBtn=`<button type="button" class="bv-event-btn bv-event-admin-list" data-event-id="${esc(e.id)}">📋 لیست ثبت‌نام‌کنندگان</button>`;
     const image=e.image_url?`<img class="bv-event-image" src="${esc(e.image_url)}" alt="${esc(e.title||'تصویر رویداد')}" loading="lazy">`:'';
     return `<article class="bv-event-card" data-event-id="${esc(e.id)}">${image}<div class="bv-event-meta"><span class="bv-event-badge">${esc(e.event_type)}</span><span>ثبت‌نام: ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</span></div><h3>${esc(e.title)}</h3><div class="bv-event-desc">${esc(e.description||'')}</div><div class="bv-event-actions">${action}${adminBtn}</div></article>`;
   }
+  // Event buttons use delegated listeners instead of inline onclick handlers.
+  // This also works when a strict Content-Security-Policy blocks inline handlers.
+  function bindEventButtons(){
+    if(window.__bvEventButtonsBound)return;
+    window.__bvEventButtonsBound=true;
+    document.addEventListener('click',function(ev){
+      const registerBtn=ev.target.closest?.('.bv-register-trigger');
+      if(registerBtn){
+        ev.preventDefault();
+        const id=registerBtn.getAttribute('data-event-id');
+        if(id) openRegister(id);
+        return;
+      }
+      const adminBtn=ev.target.closest?.('.bv-event-admin-list');
+      if(adminBtn && adminBtn.classList.contains('visible')){
+        ev.preventDefault();
+        const id=adminBtn.getAttribute('data-event-id');
+        if(id) openAdminList(id);
+      }
+    },true);
+  }
+
   async function applyAdminEventButtons(){
     const buttons=[...document.querySelectorAll('.bv-event-admin-list')]; if(!buttons.length)return;
     let ok=false;
@@ -1576,6 +1599,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const body=rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join('');
     w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Tahoma,sans-serif;padding:30px}h2{margin-bottom:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>'+esc(title)+'</h2><button onclick="window.print()">چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>زمان ثبت‌نام</th></tr></thead><tbody>'+body+'</tbody></table></body></html>');w.document.close();
   }
+  bindEventButtons();
   window.BVEvents={openRegister,closeRegister,submitRegistration,loadPublic,markEventNotice,openAdminList};
   window.BVEventsAdmin={create,reload,delete:remove,print,load:loadAdmin};
   if(window.supabaseClient?.auth) supabaseClient.auth.onAuthStateChange(()=>setTimeout(()=>{loadPublic();loadAdmin();},200));
