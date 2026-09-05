@@ -593,7 +593,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
     async function handleAuth() {
         const u = document.getElementById('user').value.trim();
         const p = document.getElementById('pass').value;
-        const email = document.getElementById('email').value.trim();
+        const emailInput = document.getElementById('email').value.trim();
         const btn = document.getElementById('mainBtn');
 
         if (currentMode === 'login') {
@@ -606,10 +606,10 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
             btn.innerText = "در حال ورود...";
 
             // Securely resolve username -> email through a Supabase RPC.
-            const { data: email, error: profileError } = await supabaseClient
+            const { data: resolvedEmail, error: profileError } = await supabaseClient
                 .rpc("get_login_email", { p_username: u });
 
-            if (profileError || !email) {
+            if (profileError || !resolvedEmail) {
                 btn.disabled = false;
                 btn.innerText = "ورود";
                 alert("نام کاربری یا رمز عبور اشتباه است.");
@@ -617,7 +617,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
             }
 
             const { data, error } = await supabaseClient.auth.signInWithPassword({
-                email: email,
+                email: resolvedEmail,
                 password: p
             });
 
@@ -629,14 +629,14 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
                 return;
             }
 
-            window.BVLoggedInEmail = String(email || "").trim().toLowerCase();
+            window.BVLoggedInEmail = String(resolvedEmail || "").trim().toLowerCase();
             document.getElementById('loginPage').style.display = "none";
             document.getElementById('mainSite').style.display = "block";
             if (window.BVSuperAdmin?.refresh) window.BVSuperAdmin.refresh();
             if (window.BVOriginalAdmin?.refresh) window.BVOriginalAdmin.refresh();
 
         } else if (currentMode === 'register') {
-            if (!u || !email || !p) {
+            if (!u || !emailInput || !p) {
                 alert("نام کاربری، ایمیل و رمز عبور را کامل وارد کنید");
                 return;
             }
@@ -678,7 +678,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
             }
 
         } else if (currentMode === 'forgot') {
-            if (!email) {
+            if (!emailInput) {
                 alert("ایمیل خود را وارد کنید");
                 return;
             }
@@ -688,7 +688,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 
             const redirectUrl = window.location.href.split('#')[0];
 
-            const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            const { error } = await supabaseClient.auth.resetPasswordForEmail(emailInput, {
                 redirectTo: redirectUrl
             });
 
