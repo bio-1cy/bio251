@@ -501,7 +501,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         <div class="logo-fa">بایو وایب</div>
         <div style="display:flex;gap:8px;align-items:center">
             <button id="bvAdminHeaderBtn" type="button" onclick="BVOriginalAdmin.open()">پنل مدیریت</button>
-            <button id="bvAdminManagerBtn" type="button" onclick="BVAdminManager.open()">مدیریت ادمین‌ها</button>
+            <button id="bvAdminManagerBtn" type="button" title="فقط ادمین اصلی" aria-label="کنترل ادمین اصلی" onclick="BVAdminManager.open()">کنترل ادمین اصلی</button>
             <button class="logout-btn" onclick="logout()">خروج</button>
         </div>
     </header>
@@ -1446,6 +1446,17 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     try{const r=await supabaseClient.rpc('biovibe_admin_access'); ok=!r.error&&r.data===true;}catch(e){try{const r2=await supabaseClient.rpc('biovive_admin_access');ok=!r2.error&&r2.data===true;}catch(e2){const u=(await supabaseClient.auth.getUser()).data?.user;ok=String(u?.email||'').trim().toLowerCase()==='ariakangavari8@gmail.com';}}
     buttons.forEach(b=>b.classList.toggle('visible',ok));
   }
+  function openRegisterFromData(e){
+    selectedEvent=e;
+    const title=$('bvEventRegisterTitle');
+    const status=$('bvEventRegisterStatus');
+    if(title) title.textContent=String(e?.title||'ثبت‌نام رویداد');
+    if(status) status.textContent='لطفاً اطلاعات خود را وارد کنید.';
+    ['bvRegFirst','bvRegLast','bvRegMajor'].forEach(id=>{const el=$(id);if(el)el.value='';});
+    const modal=$('bvEventRegisterModal');
+    if(modal){modal.style.display='block';document.body.style.overflow='hidden';}
+  }
+
   async function openRegister(id){
     try{
       const cached=window.__bvEventsById?.get(String(id));
