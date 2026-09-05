@@ -455,6 +455,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 .page>h2{text-align:center;margin:0 0 18px;padding-top:4px;}
 @media(max-width:640px){.backBtn{top:96px!important;right:12px!important;padding:9px 17px!important}.page{padding-top:150px!important}}
 </style>
+<style id="bv-hide-script-elements">script{display:none !important;}</style>
 </head>
 
 <body>
@@ -1629,6 +1630,43 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   const oldAdminOpen=window.BVOriginalAdmin?.open; if(oldAdminOpen && !window.__bvEventAdminHooked){ window.__bvEventAdminHooked=true; window.BVOriginalAdmin.open=async function(){ const r=await oldAdminOpen.apply(this,arguments); try{ if(window.BVEventsAdmin?.load) await window.BVEventsAdmin.load(); }catch(e){} return r; }; }
   if(supabaseClient?.auth)supabaseClient.auth.onAuthStateChange(()=>setTimeout(setHeader,100));
   document.addEventListener('DOMContentLoaded',()=>setTimeout(setHeader,100));window.addEventListener('load',()=>setTimeout(setHeader,100));[300,1000,2500,5000].forEach(t=>setTimeout(setHeader,t));
+})();
+</script>
+
+<script id="bv-content-rls-primary-final">
+(function(){
+  const PRIMARY='ariakangavari8@gmail.com';
+  const norm=v=>String(v||'').trim().toLowerCase();
+  async function enforce(){
+    try{
+      const r=await supabaseClient.auth.getSession();
+      const u=r?.data?.session?.user;
+      const emails=[u?.email,u?.user_metadata?.email,...(Array.isArray(u?.identities)?u.identities.map(x=>x?.identity_data?.email):[])];
+      const isPrimary=emails.some(e=>norm(e)===PRIMARY);
+      const b=document.getElementById('bvAdminManagerBtn');
+      const o=document.getElementById('bvAdminManagerOverlay');
+      if(b){
+        b.classList.toggle('bv-show',isPrimary);
+        b.style.setProperty('display',isPrimary?'inline-flex':'none','important');
+        b.style.setProperty('visibility',isPrimary?'visible':'hidden','important');
+        b.style.setProperty('pointer-events',isPrimary?'auto':'none','important');
+      }
+      if(!isPrimary && o){
+        o.style.setProperty('display','none','important');
+        o.setAttribute('aria-hidden','true');
+      }
+    }catch(e){
+      const b=document.getElementById('bvAdminManagerBtn');
+      const o=document.getElementById('bvAdminManagerOverlay');
+      if(b){b.classList.remove('bv-show');b.style.setProperty('display','none','important');b.style.setProperty('visibility','hidden','important');b.style.setProperty('pointer-events','none','important');}
+      if(o){o.style.setProperty('display','none','important');}
+    }
+  }
+  if(window.supabaseClient?.auth){supabaseClient.auth.onAuthStateChange(()=>setTimeout(enforce,50));}
+  document.addEventListener('DOMContentLoaded',enforce);
+  window.addEventListener('load',enforce);
+  [100,400,1000,2000,4000].forEach(t=>setTimeout(enforce,t));
+  setInterval(enforce,5000);
 })();
 </script>
 </body>
