@@ -737,7 +737,7 @@ header button,
             btn.innerText = "در حال ثبت‌نام...";
 
             const { data, error } = await supabaseClient.auth.signUp({
-                email: email,
+                email: emailInput,
                 password: p,
                 options: {
                     data: {
@@ -1710,11 +1710,11 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
 
   async function applyAdminEventButtons(){
     const buttons=[...document.querySelectorAll('.bv-event-admin-list')];if(!buttons.length)return;let ok=false;
-    try{const r=await supabaseClient.rpc('biovive_admin_access');ok=!r.error&&r.data===true;}catch(_){const u=await currentUser();ok=String(u?.email||'').trim().toLowerCase()===PRIMARY;}
+    try{const r=await supabaseClient.rpc('biovibe_admin_access');ok=!r.error&&r.data===true;}catch(_){const u=await currentUser();ok=String(u?.email||'').trim().toLowerCase()===PRIMARY;}
     buttons.forEach(b=>{b.classList.toggle('visible',ok);b.onclick=()=>openAdminList(b.dataset.eventId);});
   }
   async function openAdminList(id){
-    try{const a=await supabaseClient.rpc('biovive_admin_access');if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}}
+    try{const a=await supabaseClient.rpc('biovibe_admin_access');if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}}
     catch(_){alert('دسترسی ادمین قابل بررسی نیست.');return;}
     const r=await supabaseClient.rpc('bv_registration_admin_list',{p_event_id:String(id)});
     if(r.error){alert(r.error.message||'دریافت فهرست ثبت‌نام‌کنندگان ناموفق بود.');return;}
@@ -1742,7 +1742,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   let currentRegistrationRows=[];
   async function showRegistrations(id){
     try{
-      const a=await supabaseClient.rpc('biovive_admin_access');
+      const a=await supabaseClient.rpc('biovibe_admin_access');
       if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}
     }catch(_){
       const u=await currentUser();
@@ -1788,7 +1788,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     try{
       const g=await supabaseClient.auth.getUser();const u=g?.data?.user;const email=norm(u?.email||u?.user_metadata?.email||window.BVLoggedInEmail||'');
       let admin=email===PRIMARY;
-      if(u&&!admin){try{const r=await supabaseClient.rpc('biovive_admin_access');admin=!r.error&&r.data===true;}catch(e){}}
+      if(u&&!admin){try{const r=await supabaseClient.rpc('biovibe_admin_access');admin=!r.error&&r.data===true;}catch(e){}}
       const a=$('bvAdminHeaderBtn');const m=$('bvAdminManagerBtn');
       if(a)a.style.setProperty('display',admin?'inline-flex':'none','important');
       if(m)m.style.setProperty('display',email===PRIMARY?'inline-flex':'none','important');
