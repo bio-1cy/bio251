@@ -1431,7 +1431,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const menu=$('sideMenu'); if(menu){[...menu.querySelectorAll('a')].filter(x=>String(x.textContent||'').includes(type)).forEach(a=>a.querySelectorAll('.bv-event-notify').forEach(n=>n.remove()));}
   }
   async function loadPublic(){
-    const r=await supabaseClient.rpc('bv_event_public_list',{p_type:null});
+    const r=await supabaseClient.rpc('bv_registration_events',{p_type:null});
     if(r.error){console.warn('event list',r.error.message);return;}
     const rows=Array.isArray(r.data)?r.data:[];
     window.__bvEventLatest={}; window.__bvEventsById={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=Math.max(Number(window.__bvEventLatest[e.event_type]||0),Date.parse(e.created_at||'')||0); window.__bvEventsById[String(e.id)]=e;});
@@ -1479,7 +1479,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const cached=window.__bvEventsById?.[String(id)];
     if(cached){openRegisterFromData(cached);return;}
     try{
-      const r=await supabaseClient.rpc('bv_event_public_list',{p_type:null});
+      const r=await supabaseClient.rpc('bv_registration_events',{p_type:null});
       if(!r.error){
         const e=(Array.isArray(r.data)?r.data:[]).find(x=>String(x.id)===String(id));
         if(e){openRegisterFromData(e);return;}
@@ -1507,8 +1507,8 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const status=$('bvEventRegisterStatus');
     let ok=false,link=selectedEvent.event_link||'',err='';
     try{
-      const r=await supabaseClient.rpc('bv_event_register',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
-      if(!r.error){ok=true;if(typeof r.data==='string')link=r.data;else {const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}}else err=r.error.message||'';
+      const r=await supabaseClient.rpc('bv_registration_submit',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+      if(!r.error){ok=true;if(typeof r.data==='string')link=r.data;else {const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.event_link)link=d.event_link;else if(d?.link)link=d.link;}}else err=r.error.message||'';
     }catch(e){err=e.message||'';}
     btn.disabled=false;btn.textContent='تکمیل ثبت‌نام';
     if(!ok){if(status)status.textContent=err||'ثبت‌نام انجام نشد. لطفاً دوباره تلاش کنید.';return;}
