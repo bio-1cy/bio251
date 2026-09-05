@@ -447,6 +447,12 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 @media(max-width:640px){.bv-event-admin-grid{grid-template-columns:1fr}#bvEventRegisterPanel{margin:10px auto}.bv-event-actions .bv-event-btn{flex:1 1 auto}}
 </style>
 
+
+<style id="bv-back-button-top-final">
+.backBtn{display:block;margin:0 0 18px auto!important;}
+.page{text-align:right;}
+.page>h2{text-align:center;margin-bottom:12px;}
+</style>
 </head>
 
 <body>
@@ -524,13 +530,13 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         <div class="hero-content"><h1>BIOVIBE</h1><p>انجمن علمی زیست شناسی</p></div>
     </section>
     <section id="bvRecentHome" class="bv-recent-home"><h2>محتوای جدید</h2><div id="recent-home-container" class="bv-recent-grid"></div></section>
-    <section id="news" class="page"><h2>Bio‑News</h2><div id="news-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="journal" class="page"><h2>Bio‑Journal Club</h2><div id="journal-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="biotalk" class="page"><h2>BioTalk</h2><div id="biotalk-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="workshop" class="page"><h2>کارگاه</h2><div id="workshop-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="lab" class="page"><h2>Bio‑Lab</h2><div id="lab-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="media" class="page"><h2>Bio‑Media</h2><div id="media-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
-    <section id="company" class="page"><h2>Bio‑Company</h2><div id="company-container"></div><button class="backBtn" onclick="closePages()">بازگشت</button></section>
+    <section id="news" class="page"><div id="news-container"></div><h2>Bio‑News</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="journal" class="page"><div id="journal-container"></div><h2>Bio‑Journal Club</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="biotalk" class="page"><div id="biotalk-container"></div><h2>BioTalk</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="workshop" class="page"><div id="workshop-container"></div><h2>کارگاه</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="lab" class="page"><div id="lab-container"></div><h2>Bio‑Lab</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="media" class="page"><div id="media-container"></div><h2>Bio‑Media</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
+    <section id="company" class="page"><div id="company-container"></div><h2>Bio‑Company</h2><button class="backBtn" onclick="closePages()">بازگشت</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -784,7 +790,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
       const KEY='biovibe_seen_section_times_v2'; let unseen=new Set(), latest=new Map();
       function read(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
       function write(o){try{localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}}
-      function scan(rows){const seen=read(), now=Date.now();unseen=new Set();latest.clear();for(const r of rows){const sec=sectionLabel(r.section),t=Date.parse(r.created_at||'');if(!Number.isFinite(t))continue;latest.set(sec,Math.max(latest.get(sec)||0,t));if(now-t<=14*60*60*1000 && t>(Number(seen[sec])||0))unseen.add(sec)} update();}
+      function scan(rows){const seen=read(), now=Date.now();unseen=new Set();latest.clear();for(const r of rows){const sec=sectionLabel(r.section),t=Date.parse(r.created_at||'');if(!Number.isFinite(t))continue;latest.set(sec,Math.max(latest.get(sec)||0,t));if(now-t<=24*60*60*1000 && t>(Number(seen[sec])||0))unseen.add(sec)} update();}
       function update(){const dot=document.getElementById('bvDashboardDot'),menu=document.getElementById('sideMenu');if(dot)dot.style.display=unseen.size?'inline-block':'none';if(menu){menu.querySelectorAll('.bv-menu-notify').forEach(e=>e.remove());menu.querySelectorAll('a').forEach(a=>{const t=String(a.textContent||'');const hit=[['Bio-News','news'],['Bio-Journal Club','journal'],['Bio-Lab','lab'],['Bio-Media','media'],['Bio-Company','company'],['BioTalk','biotalk'],['کارگاه','workshop']].find(([label])=>t.includes(label));if(hit&&unseen.has(hit[0])){const d=document.createElement('span');d.className='bv-menu-notify';a.appendChild(d)}})}}
       function mark(sec){const label=sectionLabel(sec),o=read();o[label]=latest.get(label)||Date.now();write(o);unseen.delete(label);update();}
       return {scan,update,mark,isUnseen:s=>unseen.has(sectionLabel(s))};
@@ -804,7 +810,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         contentStore.clear(); rows.forEach(x=>contentStore.set(String(x.id),x));
         const draw=a=>a.length?a.map(renderSummaryContent).join(''):'<div class="bv-empty">هنوز محتوایی قرار نگرفته است.</div>';
         c.news.innerHTML=draw(rows.filter(x=>x.section==='Bio-News')); c.journal.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Journal Club'||x.section==='Bio-Journal Club')); c.lab.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Lab'||x.section==='Bio-Lab')); c.media.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Media'||x.section==='Bio-Media')); c.company.innerHTML=draw(rows.filter(x=>x.section==='Bio‑Company'||x.section==='Bio-Company'));
-        const cut=Date.now()-14*60*60*1000;
+        const cut=Date.now()-24*60*60*1000;
         const recent=rows.filter(x=>{const t=Date.parse(x.created_at||'');return Number.isFinite(t)&&t>=cut;});
         if(c.recentWrap){
           c.recentWrap.style.display=(activePage==='home' && recent.length)?'block':'none';
@@ -1505,7 +1511,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const body=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(x.email||'')}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join(''):`<tr><td colspan="6">هنوز کسی ثبت‌نام نکرده است.</td></tr>`;
     const w=window.open('','_blank','width=1000,height=750');
     if(!w){alert('پنجرهٔ نمایش فهرست توسط مرورگر مسدود شده است.');return;}
-    w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Tahoma,sans-serif;padding:28px;color:#111}h2{margin:0 0 18px}button{padding:9px 16px;margin-bottom:16px;cursor:pointer}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>'+esc(title)+'</h2><button onclick="window.print()">🖨️ چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>ایمیل</th><th>زمان ثبت‌نام</th></tr></thead><tbody>'+body+'</tbody></table></body></html>');
+    w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Tahoma,sans-serif;padding:28px;color:#111}h2{margin:0 0 18px}button{padding:9px 16px;margin-bottom:16px;cursor:pointer}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>${esc(title)}</h2><button onclick="window.print()">🖨️ چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>ایمیل</th><th>زمان ثبت‌نام</th></tr></thead><tbody>${body}</tbody></table></body></html>`);
     w.document.close();
   }
   async function loadAdmin(){
