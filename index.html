@@ -1430,7 +1430,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const menu=$('sideMenu'); if(menu){[...menu.querySelectorAll('a')].filter(x=>String(x.textContent||'').includes(type)).forEach(a=>a.querySelectorAll('.bv-event-notify').forEach(n=>n.remove()));}
   }
   async function loadPublic(){
-    const r=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
+    const r=await supabaseClient.rpc('bv_event_public_list',{p_type:null});
     if(r.error){console.warn('event list',r.error.message);return;}
     const rows=Array.isArray(r.data)?r.data:[];
     window.__bvEventLatest={}; window.__bvEventsById={}; rows.forEach(e=>{window.__bvEventLatest[e.event_type]=Math.max(Number(window.__bvEventLatest[e.event_type]||0),Date.parse(e.created_at||'')||0); window.__bvEventsById[String(e.id)]=e;});
@@ -1478,7 +1478,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const cached=window.__bvEventsById?.[String(id)];
     if(cached){openRegisterFromData(cached);return;}
     try{
-      const r=await supabaseClient.rpc('biovibe_list_events',{p_type:null});
+      const r=await supabaseClient.rpc('bv_event_public_list',{p_type:null});
       if(!r.error){
         const e=(Array.isArray(r.data)?r.data:[]).find(x=>String(x.id)===String(id));
         if(e){openRegisterFromData(e);return;}
@@ -1506,8 +1506,8 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const status=$('bvEventRegisterStatus');
     let ok=false,link=selectedEvent.event_link||'',err='';
     try{
-      const r=await supabaseClient.rpc('biovibe_register_event_v3',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
-      if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}else err=r.error.message||'';
+      const r=await supabaseClient.rpc('bv_event_register',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+      if(!r.error){ok=true;if(typeof r.data==='string'&&r.data)link=r.data;else{const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}}else err=r.error.message||'';
     }catch(e){err=e.message||'';}
     if(!ok){
       try{
@@ -1534,7 +1534,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
       const a=await supabaseClient.rpc('biovibe_admin_access');
       if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}
     }catch(e){alert('دسترسی ادمین قابل بررسی نیست.');return;}
-    let r=await supabaseClient.rpc('biovibe_event_registrations',{p_event_id:String(id)});
+    let r=await supabaseClient.rpc('bv_event_admin_registrations',{p_event_id:String(id)});
     if(r.error){
       const r2=await supabaseClient.rpc('biovive_event_registrations',{p_event_id:String(id)});
       if(!r2.error) r=r2;
@@ -1550,7 +1550,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   }
   async function loadAdmin(){
     const b=$('bvEventAdminList');if(!b)return;b.innerHTML='<div class="bv-admin-sub">در حال بارگذاری رویدادها...</div>';
-    let r=await supabaseClient.rpc('biovibe_admin_list_events_v2'); if(r.error) r=await supabaseClient.rpc('biovive_admin_list_events');
+    let r=await supabaseClient.rpc('bv_event_admin_list'); if(r.error) r=await supabaseClient.rpc('biovibe_admin_list_events_v2'); if(r.error) r=await supabaseClient.rpc('biovive_admin_list_events');
     if(r.error){b.innerHTML='<div style="color:#ff9aaa">'+esc(r.error.message)+'</div>';return;}
     const rows=Array.isArray(r.data)?r.data:[];
     b.innerHTML=rows.map(e=>`<div class="bv-admin-event-item"><div class="bv-admin-event-item-head"><div><b>${esc(e.title)}</b><div class="bv-admin-sub">${esc(e.event_type)} · ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</div></div><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVEventsAdmin.print('${e.id}')">🖨️ چاپ ثبت‌نام‌شده‌ها</button></div><div class="bv-admin-event-actions"><button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVEventsAdmin.delete('${e.id}')">حذف رویداد</button></div></div>`).join('')||'<div class="bv-admin-sub">رویدادی ثبت نشده است.</div>';
@@ -1570,7 +1570,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
         imageUrl=supabaseClient.storage.from('biovibe-images').getPublicUrl(path).data.publicUrl;
       }
       setNotice('در حال ثبت رویداد...');
-      let r=await supabaseClient.rpc('biovibe_create_event_with_image',{p_event_type:type,p_title:title,p_description:desc,p_registration_start:new Date(start).toISOString(),p_registration_end:new Date(end).toISOString(),p_event_link:link,p_image_url:imageUrl});
+      let r=await supabaseClient.rpc('bv_event_create',{p_event_type:type,p_title:title,p_description:desc,p_registration_start:new Date(start).toISOString(),p_registration_end:new Date(end).toISOString(),p_event_link:link,p_image_url:imageUrl});
       if(r.error){
         r=await supabaseClient.rpc('biovibe_create_event',{p_event_type:type,p_title:title,p_description:desc,p_registration_start:new Date(start).toISOString(),p_registration_end:new Date(end).toISOString(),p_event_link:link});
         if(!r.error && imageUrl){
@@ -1587,13 +1587,13 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   async function reload(){await loadAdmin();}
   async function remove(id){
     if(!confirm('این رویداد و فهرست ثبت‌نام‌هایش حذف شود؟'))return;
-    let r=await supabaseClient.rpc('biovibe_delete_event_v2',{p_event_id:String(id)});
+    let r=await supabaseClient.rpc('bv_event_delete',{p_event_id:String(id)});
     if(r.error) r=await supabaseClient.rpc('biovibe_delete_event',{p_event_id:String(id)});
     if(r.error)return setNotice(r.error.message,false);
     setNotice('رویداد حذف شد.');await loadAdmin();await loadPublic();
   }
   async function print(id){
-    const r=await supabaseClient.rpc('biovibe_event_registrations',{p_event_id:id});
+    const r=await supabaseClient.rpc('bv_event_admin_registrations',{p_event_id:id});
     if(r.error){return setNotice(r.error.message||'دریافت فهرست ثبت‌نامی‌ها ناموفق بود.',false);}
     const rows=Array.isArray(r.data)?r.data:[];const title=rows[0]?.event_title||'فهرست ثبت‌نامی‌ها';
     const w=window.open('','_blank','width=900,height=700'); if(!w){alert('پنجره چاپ توسط مرورگر مسدود شده است.');return;}
