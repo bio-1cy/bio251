@@ -1502,8 +1502,6 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     if(!selectedEvent){alert('رویداد انتخاب نشده است.');return;}
     const first=$('bvRegFirst').value.trim(),last=$('bvRegLast').value.trim(),major=$('bvRegMajor').value.trim();
     if(!first||!last||!major){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
-    const user=(await supabaseClient.auth.getUser()).data?.user;
-    if(!user){alert('برای ثبت‌نام ابتدا وارد حساب کاربری شوید.');return;}
     const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
     const status=$('bvEventRegisterStatus');
     let ok=false,link=selectedEvent.event_link||'',err='';
