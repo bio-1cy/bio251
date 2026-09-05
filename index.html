@@ -435,6 +435,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 #bvEventRegisterModal{display:none;position:fixed;inset:0;z-index:10002;background:rgba(2,9,11,.94);padding:14px;overflow:auto;backdrop-filter:blur(8px)}
 #bvEventRegisterPanel{width:min(520px,100%);margin:30px auto;background:#071b1f;border:1px solid rgba(0,234,255,.28);border-radius:22px;padding:20px;color:#fff;box-shadow:0 20px 70px #000a}
 #bvEventRegisterPanel input{width:100%;padding:11px 12px;border-radius:11px;border:1px solid rgba(0,234,255,.25);background:#041316;color:#fff;font-family:inherit;margin:5px 0 10px}
+.bv-register-top{position:sticky;top:0;display:flex;align-items:center;gap:12px;padding-bottom:14px;margin-bottom:8px;background:#071b1f;z-index:2}.bv-register-heading{flex:1;text-align:right}.bv-register-top .bv-event-btn{flex:0 0 auto}.bv-register-link{display:inline-flex;margin-top:10px;padding:11px 16px;border-radius:12px;background:linear-gradient(90deg,#00eaff,#ff8fc8);color:#041014;font-weight:900;text-decoration:none}
 .bv-admin-event-box{margin-top:16px;padding:15px;border:1px solid rgba(0,234,255,.16);border-radius:15px;background:rgba(255,255,255,.025)}
 .bv-admin-event-box input,.bv-admin-event-box textarea,.bv-admin-event-box select{font-family:inherit}
 .bv-event-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -855,12 +856,15 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 </script>
 
 <div id="bvEventRegisterModal" onclick="if(event.target===this)BVEvents.closeRegister()"><div id="bvEventRegisterPanel">
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div style="font-size:12px;color:#ff9ac9;font-weight:800">ثبت‌نام</div><h2 id="bvEventRegisterTitle" style="margin:2px 0"></h2></div><button type="button" class="bv-event-btn bv-event-muted" onclick="BVEvents.closeRegister()">بستن</button></div>
-<p id="bvEventRegisterStatus" style="color:#b9d7da;line-height:1.8"></p>
-<label>نام</label><input id="bvRegFirst" autocomplete="given-name">
-<label>نام خانوادگی</label><input id="bvRegLast" autocomplete="family-name">
-<label>رشته</label><input id="bvRegMajor" autocomplete="organization-title">
-<button id="bvRegSubmit" type="button" class="bv-event-btn bv-event-primary" style="width:100%;margin-top:6px" onclick="BVEvents.submitRegistration()">ثبت‌نام</button>
+<div class="bv-register-top"><button type="button" class="bv-event-btn bv-event-muted" onclick="BVEvents.closeRegister()">← بازگشت</button><div class="bv-register-heading"><div style="font-size:12px;color:#ff9ac9;font-weight:800">فرم ثبت‌نام</div><h2 id="bvEventRegisterTitle" style="margin:2px 0"></h2></div></div>
+<p id="bvEventRegisterStatus" style="color:#b9d7da;line-height:1.8">لطفاً اطلاعات خود را کامل وارد کنید.</p>
+<div id="bvRegisterForm">
+<label>نام</label><input id="bvRegFirst" autocomplete="given-name" required>
+<label>نام خانوادگی</label><input id="bvRegLast" autocomplete="family-name" required>
+<label>رشته</label><input id="bvRegMajor" autocomplete="organization-title" required>
+<button id="bvRegSubmit" type="button" class="bv-event-btn bv-event-primary" style="width:100%;margin-top:12px" onclick="BVEvents.submitRegistration()">تکمیل ثبت‌نام</button>
+</div>
+<div id="bvRegisterResult" style="display:none;margin-top:18px;padding:16px;border-radius:15px;background:rgba(116,242,231,.08);border:1px solid rgba(116,242,231,.28)"></div>
 </div></div>
 <div id="bvContentModal" onclick="if(event.target===this)closeContentModal()"><div id="bvContentModalInner">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px"><h2 id="bvContentModalTitle" style="margin:0"></h2><button type="button" class="bv-admin-btn bv-admin-muted" onclick="closeContentModal()">بستن</button></div>
@@ -1483,50 +1487,48 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     alert('اطلاعات این رویداد پیدا نشد. لطفاً دوباره صفحه را باز کنید.');
   }
   function openRegisterFromData(data){
-    const e=Array.isArray(data)?data[0]:data; if(!e){alert('رویداد پیدا نشد یا بازه ثبت‌نام فعال نیست.');return;}
+    const e=Array.isArray(data)?data[0]:data;
+    if(!e){alert('رویداد پیدا نشد.');return;}
     selectedEvent=e;
     $('bvEventRegisterTitle').textContent=e.title||'';
     $('bvEventRegisterStatus').textContent='نام، نام خانوادگی و رشته را وارد کنید.';
     $('bvRegFirst').value='';$('bvRegLast').value='';$('bvRegMajor').value='';
+    const result=$('bvRegisterResult'); if(result){result.style.display='none';result.innerHTML='';}
+    const form=$('bvRegisterForm');if(form)form.style.display='block';
     $('bvEventRegisterModal').style.display='block';document.body.style.overflow='hidden';
   }
-  function closeRegister(){$('bvEventRegisterModal').style.display='none';document.body.style.overflow='';selectedEvent=null;}
+  function closeRegister(){const m=$('bvEventRegisterModal');if(m)m.style.display='none';document.body.style.overflow='';selectedEvent=null;}
   async function submitRegistration(){
-    if(!selectedEvent){alert('ابتدا یک رویداد را انتخاب کنید.');return;}
-    const first=$('bvRegFirst').value.trim(), last=$('bvRegLast').value.trim(), major=$('bvRegMajor').value.trim();
+    if(!selectedEvent){alert('رویداد انتخاب نشده است.');return;}
+    const first=$('bvRegFirst').value.trim(),last=$('bvRegLast').value.trim(),major=$('bvRegMajor').value.trim();
     if(!first||!last||!major){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
+    const user=(await supabaseClient.auth.getUser()).data?.user;
+    if(!user){alert('برای ثبت‌نام ابتدا وارد حساب کاربری شوید.');return;}
     const btn=$('bvRegSubmit');btn.disabled=true;btn.textContent='در حال ثبت‌نام...';
-    let ok=false, link=selectedEvent.event_link||'', errMsg='';
-    // Preferred: SECURITY DEFINER RPC. It bypasses table RLS safely and validates the event window.
+    const status=$('bvEventRegisterStatus');
+    let ok=false,link=selectedEvent.event_link||'',err='';
     try{
-      const r=await supabaseClient.rpc('biovibe_register_event_v2',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
-      if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}
-      else errMsg=r.error.message||'';
-    }catch(e){errMsg=e.message||'';}
-    // Backward compatibility with the existing RPC.
+      const r=await supabaseClient.rpc('biovibe_register_event_v3',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+      if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}else err=r.error.message||'';
+    }catch(e){err=e.message||'';}
+    if(!ok){
+      try{
+        const r=await supabaseClient.rpc('biovibe_register_event_v2',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
+        if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}else err=r.error.message||err;
+      }catch(e){err=e.message||err;}
+    }
     if(!ok){
       try{
         const r=await supabaseClient.rpc('biovibe_register_event',{p_event_id:String(selectedEvent.id),p_first_name:first,p_last_name:last,p_major:major});
-        if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}
-        else errMsg=r.error.message||errMsg;
-      }catch(e){errMsg=e.message||errMsg;}
+        if(!r.error){ok=true;const d=Array.isArray(r.data)?r.data[0]:r.data;if(d?.link)link=d.link;}else err=r.error.message||err;
+      }catch(e){err=e.message||err;}
     }
-    // Last fallback: direct insert for databases that expose the table to authenticated users.
-    if(!ok){
-      try{
-        const startAt=Date.parse(selectedEvent.registration_start||''), endAt=Date.parse(selectedEvent.registration_end||'');
-        if(Number.isFinite(startAt)&&Number.isFinite(endAt)&&(Date.now()<startAt||Date.now()>endAt)) throw new Error('بازه ثبت‌نام این رویداد فعال نیست.');
-        const u=(await supabaseClient.auth.getUser()).data?.user;
-        if(!u) throw new Error('ابتدا وارد حساب شوید.');
-        const ins=await supabaseClient.from('biovibe_event_registrations').upsert({event_id:selectedEvent.id,user_id:u.id,first_name:first,last_name:last,major},{onConflict:'event_id,user_id'});
-        if(ins.error)throw ins.error;
-        ok=true;
-      }catch(e){errMsg=e.message||errMsg;}
-    }
-    btn.disabled=false;btn.textContent='ثبت‌نام';
-    if(!ok){alert(errMsg||'ثبت‌نام انجام نشد. لطفاً دوباره تلاش کنید.');return;}
-    closeRegister();
-    alert('ثبت‌نام با موفقیت انجام شد. لینک رویداد اکنون برای شما قابل مشاهده است.');
+    btn.disabled=false;btn.textContent='تکمیل ثبت‌نام';
+    if(!ok){if(status)status.textContent=err||'ثبت‌نام انجام نشد. لطفاً دوباره تلاش کنید.';return;}
+    if(status)status.textContent='ثبت‌نام شما با موفقیت انجام شد.';
+    const form=$('bvRegisterForm');if(form)form.style.display='none';
+    const result=$('bvRegisterResult');
+    if(result){result.style.display='block';result.innerHTML=link?'<div style="font-weight:900;color:#74f2e7">ثبت‌نام با موفقیت انجام شد ✅</div><div style="margin-top:7px;color:#dceef0">لینک ورود به رویداد برای شما فعال شد:</div><a class="bv-register-link" href="'+esc(link)+'" target="_blank" rel="noopener">ورود به رویداد</a>':'<div style="font-weight:900;color:#74f2e7">ثبت‌نام با موفقیت انجام شد ✅</div>';}
     await loadPublic();
   }
   async function openAdminList(id){
@@ -1550,7 +1552,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   }
   async function loadAdmin(){
     const b=$('bvEventAdminList');if(!b)return;b.innerHTML='<div class="bv-admin-sub">در حال بارگذاری رویدادها...</div>';
-    const r=await supabaseClient.rpc('biovive_admin_list_events');
+    let r=await supabaseClient.rpc('biovibe_admin_list_events_v2'); if(r.error) r=await supabaseClient.rpc('biovive_admin_list_events');
     if(r.error){b.innerHTML='<div style="color:#ff9aaa">'+esc(r.error.message)+'</div>';return;}
     const rows=Array.isArray(r.data)?r.data:[];
     b.innerHTML=rows.map(e=>`<div class="bv-admin-event-item"><div class="bv-admin-event-item-head"><div><b>${esc(e.title)}</b><div class="bv-admin-sub">${esc(e.event_type)} · ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</div></div><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVEventsAdmin.print('${e.id}')">🖨️ چاپ ثبت‌نام‌شده‌ها</button></div><div class="bv-admin-event-actions"><button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVEventsAdmin.delete('${e.id}')">حذف رویداد</button></div></div>`).join('')||'<div class="bv-admin-sub">رویدادی ثبت نشده است.</div>';
@@ -1585,7 +1587,13 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     }catch(e){setNotice(e.message||'ثبت رویداد ناموفق بود.',false)}
   }
   async function reload(){await loadAdmin();}
-  async function remove(id){if(!confirm('این رویداد و فهرست ثبت‌نام‌هایش حذف شود؟'))return;const r=await supabaseClient.rpc('biovibe_delete_event',{p_event_id:id});if(r.error)return setNotice(r.error.message,false);setNotice('رویداد حذف شد.');await loadAdmin();await loadPublic();}
+  async function remove(id){
+    if(!confirm('این رویداد و فهرست ثبت‌نام‌هایش حذف شود؟'))return;
+    let r=await supabaseClient.rpc('biovibe_delete_event_v2',{p_event_id:String(id)});
+    if(r.error) r=await supabaseClient.rpc('biovibe_delete_event',{p_event_id:String(id)});
+    if(r.error)return setNotice(r.error.message,false);
+    setNotice('رویداد حذف شد.');await loadAdmin();await loadPublic();
+  }
   async function print(id){
     const r=await supabaseClient.rpc('biovibe_event_registrations',{p_event_id:id});
     if(r.error){return setNotice(r.error.message||'دریافت فهرست ثبت‌نامی‌ها ناموفق بود.',false);}
