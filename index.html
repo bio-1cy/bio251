@@ -1525,7 +1525,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
       if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}
     }catch(e){alert('دسترسی ادمین قابل بررسی نیست.');return;}
 
-    let r=await supabaseClient.rpc('bv_event_admin_registrations',{p_event_id:String(id)});
+    let r=await supabaseClient.rpc('bv_registration_admin_list',{p_event_id:String(id)});
     if(r.error){alert(r.error.message||'دریافت فهرست ثبت‌نام‌کنندگان ناموفق بود.');return;}
     const rows=Array.isArray(r.data)?r.data:[];
     const title=rows[0]?.event_title||'فهرست ثبت‌نام‌کنندگان';
@@ -1595,7 +1595,7 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     // Open immediately from the print button click to avoid popup blocking.
     const w=window.open('about:blank','_blank','width=900,height=700');
     if(!w){alert('مرورگر اجازه باز کردن صفحه چاپ را نداد. لطفاً Pop-up را برای سایت فعال کنید.');return;}
-    const r=await supabaseClient.rpc('bv_event_admin_registrations',{p_event_id:id});
+    const r=await supabaseClient.rpc('bv_registration_admin_list',{p_event_id:id});
     if(r.error){return setNotice(r.error.message||'دریافت فهرست ثبت‌نامی‌ها ناموفق بود.',false);}
     const rows=Array.isArray(r.data)?r.data:[];const title=rows[0]?.event_title||'فهرست ثبت‌نامی‌ها';
     const body=rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join('');
