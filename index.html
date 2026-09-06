@@ -1519,15 +1519,19 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     await loadPublic();
   }
   async function openAdminList(id){
-    // نمایش فهرست داخل خود صفحه؛ بدون window.open و بدون وابستگی به Popup مرورگر
+    // نمایش مستقیم فهرست داخل همان صفحه؛ بدون Popup و بدون بررسی RPC جداگانه
+    let r;
     try{
-      const a=await supabaseClient.rpc('biovibe_admin_access');
-      if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}
-    }catch(e){alert('دسترسی ادمین قابل بررسی نیست.');return;}
-
-    let r=await supabaseClient.rpc('bv_registration_admin_list',{p_event_id:String(id)});
-    if(r.error){alert(r.error.message||'دریافت فهرست ثبت‌نام‌کنندگان ناموفق بود.');return;}
-    const rows=Array.isArray(r.data)?r.data:[];
+      r=await supabaseClient.rpc('bv_registration_admin_list',{p_event_id:String(id)});
+    }catch(e){
+      r={error:e};
+    }
+    if(r?.error){
+      const msg=r.error.message||String(r.error||'');
+      alert('دریافت فهرست ثبت‌نام‌کنندگان ناموفق بود:\n'+msg);
+      return;
+    }
+    const rows=Array.isArray(r?.data)?r.data:[];
     const title=rows[0]?.event_title||'فهرست ثبت‌نام‌کنندگان';
     const body=rows.length
       ? rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name||'')}</td><td>${esc(x.last_name||'')}</td><td>${esc(x.major||'')}</td><td>${esc(x.email||'')}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join('')
@@ -1537,11 +1541,11 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     if(old)old.remove();
     const modal=document.createElement('div');
     modal.id='bvRegistrationListModal';
-    modal.style.cssText='position:fixed;inset:0;z-index:1000000;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:18px;direction:rtl;';
-    modal.innerHTML=`<div style="width:min(1000px,100%);max-height:90vh;overflow:auto;background:#07181b;border:1px solid rgba(0,234,255,.35);border-radius:22px;padding:20px;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.55)">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px">
-        <h2 style="margin:0;font-size:22px">${esc(title)}</h2>
-        <button type="button" onclick="document.getElementById('bvRegistrationListModal')?.remove();document.body.style.overflow=''" style="border:0;border-radius:12px;padding:10px 16px;cursor:pointer;font-weight:800">بستن ✕</button>
+    modal.style.cssText='position:fixed;inset:0;z-index:1000000;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:14px;direction:rtl;';
+    modal.innerHTML=`<div style="width:min(1000px,100%);max-height:92vh;overflow:auto;background:#07181b;border:1px solid rgba(0,234,255,.35);border-radius:22px;padding:18px;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.55)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;position:sticky;top:0;background:#07181b;padding-bottom:10px">
+        <div><div style="font-size:12px;color:#74f2e7;font-weight:800">فهرست ثبت‌نام‌کنندگان</div><h2 style="margin:3px 0 0;font-size:21px">${esc(title)}</h2></div>
+        <button type="button" id="bvRegistrationListClose" style="border:0;border-radius:12px;padding:9px 14px;cursor:pointer;font-weight:800">بستن ✕</button>
       </div>
       <div style="overflow:auto;border-radius:14px">
         <table style="width:100%;border-collapse:collapse;min-width:700px">
@@ -1553,14 +1557,16 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     </div>`;
     document.body.appendChild(modal);
     document.body.style.overflow='hidden';
-    modal.addEventListener('click',e=>{if(e.target===modal){modal.remove();document.body.style.overflow='';}});
+    const close=()=>{modal.remove();document.body.style.overflow='';};
+    modal.querySelector('#bvRegistrationListClose')?.addEventListener('click',close);
+    modal.addEventListener('click',e=>{if(e.target===modal)close();});
   }
   async function loadAdmin(){
     const b=$('bvEventAdminList');if(!b)return;b.innerHTML='<div class="bv-admin-sub">در حال بارگذاری رویدادها...</div>';
     let r=await supabaseClient.rpc('bv_event_admin_list');
     if(r.error){b.innerHTML='<div style="color:#ff9aaa">'+esc(r.error.message)+'</div>';return;}
     const rows=Array.isArray(r.data)?r.data:[];
-    b.innerHTML=rows.map(e=>`<div class="bv-admin-event-item"><div class="bv-admin-event-item-head"><div><b>${esc(e.title)}</b><div class="bv-admin-sub">${esc(e.event_type)} · ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</div></div><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVEventsAdmin.openList('${e.id}')">📋 فهرست ثبت‌نام‌شده‌ها</button></div><div class="bv-admin-event-actions"><button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVEventsAdmin.delete('${e.id}')">حذف رویداد</button></div></div>`).join('')||'<div class="bv-admin-sub">رویدادی ثبت نشده است.</div>';
+    b.innerHTML=rows.map(e=>`<div class="bv-admin-event-item"><div class="bv-admin-event-item-head"><div><b>${esc(e.title)}</b><div class="bv-admin-sub">${esc(e.event_type)} · ${esc(fmt(e.registration_start))} تا ${esc(fmt(e.registration_end))}</div></div><button type="button" class="bv-admin-btn bv-admin-muted" onclick="BVEvents.openAdminList('${e.id}')">📋 فهرست ثبت‌نام‌شده‌ها</button></div><div class="bv-admin-event-actions"><button type="button" class="bv-admin-btn bv-admin-danger" onclick="BVEventsAdmin.delete('${e.id}')">حذف رویداد</button></div></div>`).join('')||'<div class="bv-admin-sub">رویدادی ثبت نشده است.</div>';
   }
   async function create(){
     const type=$('bvEventType').value,title=$('bvEventTitle').value.trim(),desc=$('bvEventDescription').value.trim(),start=$('bvEventRegStart').value,end=$('bvEventRegEnd').value,link=$('bvEventLink').value.trim(),imgFile=$('bvEventImage')?.files?.[0]||null;
