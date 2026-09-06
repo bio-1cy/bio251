@@ -1519,6 +1519,9 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     await loadPublic();
   }
   async function openAdminList(id){
+    // Open the window immediately from the click handler so mobile browsers do not block it.
+    const w=window.open('about:blank','_blank','width=1000,height=750');
+    if(!w){alert('مرورگر اجازه نمایش پنجره فهرست را نداد. لطفاً مسدودکننده پنجره‌های بازشو (Pop-up) را برای سایت فعال کنید.');return;}
     try{
       const a=await supabaseClient.rpc('biovibe_admin_access');
       if(a.error||a.data!==true){alert('این بخش فقط برای ادمین‌هاست.');return;}
@@ -1528,8 +1531,6 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     const rows=Array.isArray(r.data)?r.data:[];
     const title=rows[0]?.event_title||'فهرست ثبت‌نام‌کنندگان';
     const body=rows.length?rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(x.email||'')}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join(''):`<tr><td colspan="6">هنوز کسی ثبت‌نام نکرده است.</td></tr>`;
-    const w=window.open('','_blank','width=1000,height=750');
-    if(!w){alert('پنجرهٔ نمایش فهرست توسط مرورگر مسدود شده است.');return;}
     w.document.write(`<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Tahoma,sans-serif;padding:28px;color:#111}h2{margin:0 0 18px}button{padding:9px 16px;margin-bottom:16px;cursor:pointer}table{width:100%;border-collapse:collapse}th,td{border:1px solid #999;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>${esc(title)}</h2><button onclick="window.print()">🖨️ چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>ایمیل</th><th>زمان ثبت‌نام</th></tr></thead><tbody>${body}</tbody></table></body></html>`);
     w.document.close();
   }
@@ -1570,10 +1571,12 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
     setNotice('رویداد حذف شد.');await loadAdmin();await loadPublic();
   }
   async function print(id){
+    // Open immediately from the print button click to avoid popup blocking.
+    const w=window.open('about:blank','_blank','width=900,height=700');
+    if(!w){alert('مرورگر اجازه باز کردن صفحه چاپ را نداد. لطفاً Pop-up را برای سایت فعال کنید.');return;}
     const r=await supabaseClient.rpc('bv_event_admin_registrations',{p_event_id:id});
     if(r.error){return setNotice(r.error.message||'دریافت فهرست ثبت‌نامی‌ها ناموفق بود.',false);}
     const rows=Array.isArray(r.data)?r.data:[];const title=rows[0]?.event_title||'فهرست ثبت‌نامی‌ها';
-    const w=window.open('','_blank','width=900,height=700'); if(!w){alert('پنجره چاپ توسط مرورگر مسدود شده است.');return;}
     const body=rows.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.first_name)}</td><td>${esc(x.last_name)}</td><td>${esc(x.major)}</td><td>${esc(fmt(x.registered_at))}</td></tr>`).join('');
     w.document.write('<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><title>'+esc(title)+'</title><style>body{font-family:Tahoma,sans-serif;padding:30px}h2{margin-bottom:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #aaa;padding:8px;text-align:right}th{background:#eee}@media print{button{display:none}}</style></head><body><h2>'+esc(title)+'</h2><button onclick="window.print()">چاپ</button><table><thead><tr><th>ردیف</th><th>نام</th><th>نام خانوادگی</th><th>رشته</th><th>زمان ثبت‌نام</th></tr></thead><tbody>'+body+'</tbody></table></body></html>');w.document.close();
   }
