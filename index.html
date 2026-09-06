@@ -1669,5 +1669,103 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
   setInterval(enforce,5000);
 })();
 </script>
+
+<script id="bv-registration-button-final-fix">
+(function(){
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  let selected=null;
+
+  async function getEvent(id){
+    const key=String(id||'');
+    const cached=window.__bvEventsById?.[key];
+    if(cached) return cached;
+    try{
+      const r=await supabaseClient.rpc('bv_registration_events',{p_type:null});
+      if(r.error) throw r.error;
+      const rows=Array.isArray(r.data)?r.data:[];
+      return rows.find(e=>String(e.id)===key)||null;
+    }catch(e){
+      console.error('registration event lookup',e);
+      return null;
+    }
+  }
+
+  async function open(id){
+    const e=await getEvent(id);
+    if(!e){alert('اطلاعات این رویداد پیدا نشد. لطفاً صفحه را تازه‌سازی کنید.');return;}
+    selected=e;
+    window.__bvSelectedRegistrationEvent=e;
+    const modal=$('bvEventRegisterModal');
+    if(!modal){alert('فرم ثبت‌نام پیدا نشد.');return;}
+    const title=$('bvEventRegisterTitle'),status=$('bvEventRegisterStatus');
+    const first=$('bvRegFirst'),last=$('bvRegLast'),major=$('bvRegMajor');
+    const form=$('bvRegisterForm'),result=$('bvRegisterResult'),btn=$('bvRegSubmit');
+    if(title)title.textContent=e.title||'';
+    if(status)status.textContent='نام، نام خانوادگی و رشته را وارد کنید.';
+    if(first)first.value='';if(last)last.value='';if(major)major.value='';
+    if(result){result.style.display='none';result.innerHTML='';}
+    if(form)form.style.display='block';
+    if(btn){btn.disabled=false;btn.textContent='تکمیل ثبت‌نام';}
+    modal.style.setProperty('display','block','important');
+    document.body.style.overflow='hidden';
+  }
+
+  async function submit(){
+    const e=selected||window.__bvSelectedRegistrationEvent;
+    if(!e){alert('رویداد انتخاب نشده است.');return;}
+    const first=String($('bvRegFirst')?.value||'').trim();
+    const last=String($('bvRegLast')?.value||'').trim();
+    const major=String($('bvRegMajor')?.value||'').trim();
+    if(!first||!last||!major){alert('نام، نام خانوادگی و رشته را کامل وارد کنید.');return;}
+    const btn=$('bvRegSubmit'),status=$('bvEventRegisterStatus');
+    if(btn){btn.disabled=true;btn.textContent='در حال ثبت‌نام...';}
+    try{
+      const r=await supabaseClient.rpc('bv_registration_submit',{
+        p_event_id:String(e.id),p_first_name:first,p_last_name:last,p_major:major
+      });
+      if(r.error) throw r.error;
+      let link='';
+      const d=Array.isArray(r.data)?r.data[0]:r.data;
+      if(typeof r.data==='string') link=r.data;
+      else link=d?.event_link||d?.link||'';
+      if(status)status.textContent='ثبت‌نام شما با موفقیت انجام شد.';
+      const form=$('bvRegisterForm');if(form)form.style.display='none';
+      const result=$('bvRegisterResult');
+      if(result){
+        result.style.display='block';
+        result.innerHTML=link
+          ? '<div style="font-weight:900;color:#74f2e7">ثبت‌نام با موفقیت انجام شد ✅</div><div style="margin-top:7px;color:#dceef0">لینک ورود به رویداد برای شما فعال شد:</div><a class="bv-register-link" href="'+esc(link)+'" target="_blank" rel="noopener">ورود به رویداد</a>'
+          : '<div style="font-weight:900;color:#74f2e7">ثبت‌نام با موفقیت انجام شد ✅</div>';
+      }
+      try{if(window.BVEvents?.loadPublic)await window.BVEvents.loadPublic();}catch(_){ }
+    }catch(err){
+      console.error('registration submit',err);
+      if(status)status.textContent=err?.message||'ثبت‌نام انجام نشد. لطفاً دوباره تلاش کنید.';
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='تکمیل ثبت‌نام';}
+    }
+  }
+
+  function close(){
+    const m=$('bvEventRegisterModal');if(m)m.style.setProperty('display','none','important');
+    document.body.style.overflow='';selected=null;window.__bvSelectedRegistrationEvent=null;
+  }
+
+  function install(){
+    if(window.BVEvents){
+      window.BVEvents.openRegister=open;
+      window.BVEvents.submitRegistration=submit;
+      window.BVEvents.closeRegister=close;
+    }
+    window.BVOpenRegistration=open;
+    window.BVSubmitRegistration=submit;
+  }
+
+  install();
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(install,50));
+  window.addEventListener('load',()=>setTimeout(install,100));
+})();
+</script>
 </body>
 </html>
