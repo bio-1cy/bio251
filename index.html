@@ -456,6 +456,8 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 @media(max-width:640px){.backBtn{top:96px!important;right:12px!important;padding:9px 17px!important}.page{padding-top:150px!important}}
 </style>
 <style id="bv-hide-script-elements">script{display:none !important;}</style>
+
+<style id="bv-search-visible-fix">#bvSearchSection{display:block!important;visibility:visible!important;opacity:1!important;}#bvSearchSection input{display:block!important;visibility:visible!important;opacity:1!important;}@media(max-width:640px){#bvSearchSection{margin-top:12px;margin-bottom:14px;padding:0 10px;}#bvSearchSection input{min-width:0;width:100%;}}</style>
 </head>
 
 <body>
@@ -515,15 +517,17 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         </div>
     </header>
 
-<section id="bvSearchSection" style="max-width:820px;margin:18px auto 8px;padding:0 14px;">
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-    <input id="bvSiteSearch" type="search" placeholder="جستجو در محتوا..." autocomplete="off" style="flex:1;min-width:220px;padding:12px 14px;border-radius:14px;border:1px solid rgba(0,234,255,.25);background:#041316;color:#fff;font-family:inherit;box-sizing:border-box;">
-    <button id="bvSiteSearchClear" type="button" class="bv-event-btn bv-event-muted">پاک کردن</button>
+<section id="bvSearchSection" aria-label="جستجو" style="display:block!important;position:relative;z-index:99999;max-width:820px;margin:16px auto 18px;padding:0 14px;box-sizing:border-box;">
+  <div style="padding:12px;border:1px solid rgba(0,234,255,.22);border-radius:16px;background:rgba(4,19,22,.96);box-shadow:0 8px 24px rgba(0,0,0,.18);">
+    <div style="font-size:16px;font-weight:900;margin-bottom:8px;text-align:right;">🔎 جستجو</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <input id="bvSiteSearch" type="search" placeholder="عنوان یا توضیحات را جستجو کنید..." autocomplete="off" style="flex:1;min-width:220px;padding:12px 14px;border-radius:14px;border:1px solid rgba(0,234,255,.25);background:#041316;color:#fff;font-family:inherit;box-sizing:border-box;outline:none;">
+      <button id="bvSiteSearchClear" type="button" class="bv-event-btn bv-event-muted">پاک کردن</button>
+    </div>
+    <div id="bvSearchResults" style="margin-top:10px;display:none;"></div>
   </div>
-  <div id="bvSearchResults" style="margin-top:10px;display:none;"></div>
 </section>
-
-    <div id="sideMenu" class="sideMenu">
+<div id="sideMenu" class="sideMenu">
         <a onclick="openPage('lab')">Bio‑Lab</a>
         <a onclick="openPage('media')">Bio‑Media</a>
         <a onclick="openPage('company')">Bio‑Company</a>
