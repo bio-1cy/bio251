@@ -471,6 +471,15 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
 }
 </style>
 <style id="bv-hide-script-elements">script{display:none !important;}</style>
+
+<style id="bv-search-working-style">
+  #bvSearchResults{max-height:45vh;overflow:auto;}
+  .bv-search-result{display:block;width:100%;text-align:right;margin:7px 0;padding:12px 14px;border-radius:14px;border:1px solid rgba(0,234,255,.16);background:rgba(255,255,255,.03);color:#fff;font-family:inherit;cursor:pointer;}
+  .bv-search-result:hover{background:rgba(0,234,255,.08);}
+  .bv-search-result-title{font-weight:900;color:#8ff8f0;font-size:15px;}
+  .bv-search-result-meta{font-size:11px;opacity:.72;margin-top:3px;}
+  .bv-search-result-desc{font-size:12px;line-height:1.7;opacity:.88;margin-top:5px;}
+</style>
 </head>
 
 <body>
@@ -765,6 +774,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
         loadContent();
         window.scrollTo(0,0);
     }
+    window.BVOpenPage=openPage;
     const contentStore = new Map();
     function arr(v){if(Array.isArray(v))return v;if(typeof v==='string'){try{const x=JSON.parse(v);return Array.isArray(x)?x:[v]}catch(_){return v?[v]:[]}}return []}
     function imageUrls(x){let a=arr(x.image_urls);if(!a.length&&x.image_url)a=[x.image_url];return a.map(v=>typeof v==='string'?v:(v&&v.url)||'').filter(Boolean)}
@@ -794,6 +804,7 @@ header>div:last-child{min-width:0;display:flex;align-items:center;gap:7px;flex-w
       document.body.style.overflow='hidden';
     }
     function openContentDetails(id){const x=contentStore.get(String(id));if(x)renderFullContent(x)}
+    window.BVContentStore=contentStore; window.BVOpenContentDetails=openContentDetails;
     function closeContentModal(){document.getElementById('bvContentModal').style.display='none';document.body.style.overflow=''}
     async function toggleContentLike(id,btn){
       if(!supabaseClient?.auth){return;}
@@ -1799,58 +1810,91 @@ $('bvContentImages').addEventListener('change',preview);$('bvContentFiles').addE
 
 <script id="bv-site-search-final">
 (function(){
-  function init(){
+  function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  const normalize=v=>String(v||'').toLowerCase().replace(/‌/g,' ').replace(/[يى]/g,'ی').replace(/[ك]/g,'ک').trim();
+  function score(row,q){
+    const title=normalize(row.title), desc=normalize(row.description), sec=normalize(row.section);
+    const hay=(title+' '+desc+' '+sec).trim();
+    const terms=normalize(q).split(/\s+/).filter(Boolean);
+    let hits=0;
+    for(const t of terms){
+      if(hay.includes(t)) hits++;
+      else if(t.length>=3){
+        // tiny fuzzy fallback: prefix / near-match for common typing differences
+        const words=hay.split(/\s+/); if(words.some(w=>w.startsWith(t.slice(0,Math.max(2,t.length-1))))) hits+=0.65;
+      }
+    }
+    return terms.length?hits/terms.length:0;
+  }
+  async function getRows(){
+    try{
+      const store=window.BVContentStore;
+      if(store && store.size) return [...store.values()];
+    }catch(_){}
+    try{
+      const r=await window.supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(300);
+      if(!r.error) return r.data||[];
+    }catch(_){}
+    return [];
+  }
+  function openResult(row){
+    if(row.kind==='event'){
+      const type=String(row.event_type||'');
+      if(type.toLowerCase().includes('workshop')||type.includes('کارگاه')){
+        if(typeof window.BVOpenPage==='function') window.BVOpenPage('workshop');
+        else document.getElementById('workshop')?.scrollIntoView({behavior:'smooth'});
+      }else{
+        if(typeof window.BVOpenPage==='function') window.BVOpenPage('biotalk');
+        else document.getElementById('biotalk')?.scrollIntoView({behavior:'smooth'});
+      }
+      return;
+    }
+    if(typeof window.BVOpenContentDetails==='function') window.BVOpenContentDetails(String(row.id));
+  }
+  async function searchNow(){
     const input=document.getElementById('bvSiteSearch');
     const results=document.getElementById('bvSearchResults');
-    const clear=document.getElementById('bvSiteSearchClear');
     if(!input||!results)return;
-    function norm(v){return String(v||'').toLowerCase().trim().replace(/‌/g,' ')}
-    function score(row,q){
-      const hay=norm([row.title,row.description,row.section].join(' '));
-      const terms=norm(q).split(/\s+/).filter(Boolean);
-      if(!terms.length)return 0;
-      let n=0;
-      for(const t of terms){ if(hay.includes(t)) n += 1; }
-      return n/terms.length;
-    }
-    function render(rows,q){
-      if(!q){results.style.display='none';results.innerHTML='';return}
-      const arr=rows.map(x=>({x,s:score(x,q)})).filter(v=>v.s>0).sort((a,b)=>b.s-a.s).slice(0,20);
-      results.style.display='block';
-      if(!arr.length){results.innerHTML='<div class="bv-empty" style="padding:14px">موردی پیدا نشد.</div>';return}
-      results.innerHTML=arr.map(({x})=>{
-        const sec=String(x.section||'محتوا').replace('‑','-');
-        const d=String(x.description||'').replace(/\s+/g,' ').trim();
-        const id=String(x.id);
-        return '<button type="button" data-search-id="'+id.replace(/"/g,'&quot;')+'" style="display:block;width:100%;text-align:right;margin:7px 0;padding:12px;border-radius:14px;border:1px solid rgba(0,234,255,.16);background:rgba(255,255,255,.03);color:#fff;font-family:inherit;cursor:pointer"><div style="font-weight:900;color:#8ff8f0">'+esc(x.title||'بدون عنوان')+'</div><div style="font-size:12px;opacity:.75;margin-top:4px">'+esc(sec)+'</div><div style="font-size:13px;line-height:1.7;margin-top:5px">'+esc(d.slice(0,180))+'</div></button>';
-      }).join('');
-      results.querySelectorAll('[data-search-id]').forEach(b=>b.addEventListener('click',()=>{
-        const id=b.getAttribute('data-search-id');
-        if(window.contentStore&&typeof window.openContentDetails==='function') window.openContentDetails(id);
-        else if(typeof openContentDetails==='function') openContentDetails(id);
-      }));
-    }
-    function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-    async function search(){
-      const q=input.value;
-      if(!q.trim()){render([],q);return}
-      try{
-        let rows=[];
-        if(window.contentStore&&window.contentStore.size) rows=[...window.contentStore.values()];
-        if(!rows.length && window.supabaseClient){
-          const r=await window.supabaseClient.from('contents').select('*').order('created_at',{ascending:false}).limit(300);
-          rows=r.error?[]:(r.data||[]);
-        }
-        const qn=q.trim();
-        render(rows,qn);
-      }catch(e){results.style.display='block';results.innerHTML='<div class="bv-empty" style="padding:14px">جستجو انجام نشد.</div>'}
-    }
-    let timer;
-    input.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(search,180)});
-    clear.addEventListener('click',()=>{input.value='';render([], '') ; input.focus();});
-    window.BVSiteSearch={search};
+    const q=normalize(input.value);
+    if(!q){results.style.display='none';results.innerHTML='';return;}
+    results.style.display='block';
+    results.innerHTML='<div class="bv-empty" style="padding:12px">در حال جستجو...</div>';
+    const rows=await getRows();
+    const contentRows=rows.map(x=>({...x,kind:'content'}));
+    let eventRows=[];
+    try{
+      if(window.supabaseClient){
+        const er=await window.supabaseClient.rpc('bv_registration_events');
+        if(!er.error) eventRows=(Array.isArray(er.data)?er.data:[]).map(x=>({...x,kind:'event',section:x.event_type||'رویداد'}));
+      }
+    }catch(_){}
+    const all=[...contentRows,...eventRows];
+    const ranked=all.map(x=>({x,s:score(x,q)})).filter(v=>v.s>0).sort((a,b)=>b.s-a.s).slice(0,20);
+    if(!ranked.length){results.innerHTML='<div class="bv-empty" style="padding:12px">موردی پیدا نشد.</div>';return;}
+    results.innerHTML=ranked.map(({x})=>{
+      const label=x.kind==='event'?(x.event_type||'رویداد'):(x.section||'محتوا');
+      const desc=x.kind==='event'?(x.description||''):(x.description||'');
+      return '<button type="button" class="bv-search-result" data-id="'+esc(x.id)+'"><div class="bv-search-result-title">'+esc(x.title||'بدون عنوان')+'</div><div class="bv-search-result-meta">'+esc(label)+'</div><div class="bv-search-result-desc">'+esc(String(desc).replace(/\s+/g,' ').trim().slice(0,180))+'</div></button>';
+    }).join('');
+    results.querySelectorAll('.bv-search-result').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const id=btn.getAttribute('data-id');
+        const found=ranked.find(v=>String(v.x.id)===String(id));
+        if(found) openResult(found.x);
+      });
+    });
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  function init(){
+    const input=document.getElementById('bvSiteSearch');
+    const clear=document.getElementById('bvSiteSearchClear');
+    if(!input)return;
+    let timer=null;
+    input.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(searchNow,120);});
+    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(timer);searchNow();}});
+    if(clear)clear.addEventListener('click',()=>{input.value='';document.getElementById('bvSearchResults').style.display='none';input.focus();});
+    window.BVSiteSearch={search:searchNow};
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
 </body>
